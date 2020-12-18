@@ -1,0 +1,190 @@
+---
+title: "Comparison between TRMM and VALUE observations time series in the Iberian Peninsula during 1998-2010"
+author: "Óscar Mirones Alonso"
+output: html_notebook
+---
+
+First, we load the required packages from climate4R: loadeR, transformeR, downscaleR and visualizeR. Also the ncdf4 package is necessary for the use of the function joinNewAggregation.
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(ncdf4)
+```
+The next step is loading the observation data of Iberian peninsula. The data can be downloaded using the library VALUE from SantanderMetGroup. Using devtools::install_github('SantanderMetGroup/VALUE') the package is downloaded. Only 1998-2010 years are selected. The complete dataset has a temporal range from 1961 to 2010. Obviously, TRMM temporal coverage is 1998-2010. TRMM data downloaded is 3B42_Daily_V7 product.
+```{r}
+library(VALUE)
+
+value.dataset <- file.path(find.package("VALUE"), "example_datasets", "VALUE_ECA_86_v2.zip")
+
+obs <- loadStationData(dataset = value.dataset, var = "precip",
+                              lonLim = c(-10,4.5),
+                              latLim = c(34.7,44))
+str(obs)
+```
+
+```{r}
+temporalPlot(obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+Subsetting of years is available with subsetGrid. In this case, three differents datasets are selected using the argument years.
+```{r}
+obs1998 <- subsetGrid(obs, years = 1998)
+obs1999 <- subsetGrid(obs, years = 1999)
+obs2000 <- subsetGrid(obs, years = 2000)
+
+
+temporalPlot(obs1998,obs1999,obs2000, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+```{r}
+obs <- subsetGrid(obs, years = 1998:2010)
+temporalPlot(obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+
+This function allows creating an inventory of multiple data files, generating an ncml file. It uses the joinNew aggregation scheme. The time dimension is added as a third dimension, while the other two dimensions are longitude and latitude.
+```{r}
+joinNewAggregation <- function(source.dir,ncml.file, dest.dir){
+  setwd(dest.dir)
+  
+  #list files from directory
+  lf <- normalizePath(list.files(source.dir, full.names = TRUE), winslash = "/")
+  lf <- grep("nc4", lf, value = TRUE)
+  message("[",Sys.time(),"] Creating dataset from ", length(lf), " files")
+  
+  ncfiles <- grep("nc4",list.files(source.dir), value = TRUE)
+  
+  
+  z <- file(ncml.file, "w")
+  cat("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", file = z)
+  cat(c("\n","<netcdf xmlns=\"http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2\">"), sep = "", file = z)
+  cat(c("\n","\t","<dimension name=\"time\" length =","\"",paste(length(lf)) ,"\"", " isUnlimited=","\"",paste("false"), "\"/>"), sep = "", file = z)
+  cat(c("\n","\t","<variable name=\"time\" shape=\"time\" type=\"int\" >"), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"long_name\" value=\"Day of a natural year\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"standard_name\" value=\"time\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"units\" value=","\"",paste("days since",as.Date(strsplit(ncfiles[1],"[.]")[[1]][2], format = "%Y%m%d")-1),"\"/>"), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"_CoordinateAxisType\" value=\"Time\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<values>",seq(1,length(lf)), "</values>"), file = z)
+  cat(c("\n","\t","</variable>"), sep = "", file = z)
+  cat(c("\n","\t","<aggregation dimName=\"time\" type=\"joinNew\">"), sep = "", file = z)
+  cat(c("\n","\t","\t","<variableAgg name=\"precipitation\" />"), sep = "", file = z)
+  for (i in 1:length(lf)) {
+    cat(c("\n","\t","\t","<netcdf location=", "\"", lf[i]), "\"/>", sep = "", file = z)
+  }
+  
+  cat(c("\n","\t","</aggregation>"), sep = "", file = z)
+  cat(c("\n","</netcdf>"), sep = "", file = z)
+  
+  message("[",Sys.time(),"] NCML file created in ", source.dir)
+  
+  close(z)
+  
+}
+```
+
+Use of joinNewAggregation function, very simple:
+```{r}
+joinNewAggregation("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7", "inventory.ncml","C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+
+```
+Obtaining the inventory of the data from the ncml file generated previously.
+```{r}
+#setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+inventory <- dataInventory("inventory.ncml")
+str(inventory)
+```
+With loadGridData, we can select some variables of out data as the longitude and latitude boundaries and the years of study. Also the variable precipitation is selected.
+```{r}
+trmm <- loadGridData(dataset = "C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7/inventory.ncml",
+             var = "precipitation",
+             lonLim = c(-10,4.5),
+             latLim = c(34.7,44) ,
+             years = 1998:2010)
+```
+Once made the subsetting, we can show the time series of precipitation data 
+```{r}
+temporalPlot(trmm, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+We combine the observations and trmm satelite data obtaining the time series for comparision both datasets. 
+
+
+```{r}
+temporalPlot(trmm,obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+Similarly, we can emphasize how these series behave in particular stations. We thus select the two with the lowest altitude and the two with the highest respectively.
+
+```{r}
+i <- order(obs$Metadata$altitude, decreasing = FALSE)[1]
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[i])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+temporalPlot(trmm.station,obs.station,
+               xyplot.custom = list(main = paste(obs.station$Metadata$name,"Precipitation",
+                                                 "\n",
+                                                 paste("Station altitude:", obs.station$Metadata$altitude, "m")),
+                                    ylab = "mm"))
+```
+```{r}
+i <- order(obs$Metadata$altitude, decreasing = FALSE)[2]
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[i])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+temporalPlot(trmm.station,obs.station,
+               xyplot.custom = list(main = paste(obs.station$Metadata$name,"Precipitation",
+                                                 "\n",
+                                                 paste("Station altitude:", obs.station$Metadata$altitude, "m")),
+                                    ylab = "mm"))
+```
+
+```{r}
+i <- order(obs$Metadata$altitude, decreasing = FALSE)[10]
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[i])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+temporalPlot(trmm.station,obs.station,
+               xyplot.custom = list(main = paste(obs.station$Metadata$name,"Precipitation",
+                                                 "\n",
+                                                 paste("Station altitude:", obs.station$Metadata$altitude, "m")),
+                                    ylab = "mm"))
+```
+
+```{r}
+i <- order(obs$Metadata$altitude, decreasing = FALSE)[11]
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[i])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+temporalPlot(trmm.station,obs.station,
+               xyplot.custom = list(main = paste(obs.station$Metadata$name,"Precipitation",
+                                                 "\n",
+                                                 paste("Station altitude:", obs.station$Metadata$altitude, "m")),
+                                    ylab = "mm"))
+```
+
+
+
