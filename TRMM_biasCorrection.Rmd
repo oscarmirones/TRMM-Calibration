@@ -1,5 +1,5 @@
 ---
-title: "Bias correction RMM and VALUE observations time series in the Iberian Peninsula during 1998-2010"
+title: "Bias correction TRMM and VALUE observations time series in the Iberian Peninsula during 1998-2010"
 author: "Óscar Mirones Alonso"
 output: html_notebook
 
@@ -148,6 +148,12 @@ trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
 cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo", scaling.type = "multiplicative")
 ```
 ```{r}
+temporalPlot(obs.station,trmm.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
 temporalPlot(obs.station,cal.station,
              xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
 
@@ -213,6 +219,12 @@ trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
   
 cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling",cross.val = "loo", scaling.type = "multiplicative")
 ```
+```{r}
+temporalPlot(obs.station,trmm.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data)),ylab = "mm"))
+
+```
+
 ```{r}
 temporalPlot(obs.station,cal.station,
              xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
@@ -282,6 +294,12 @@ trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
 cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo",scaling.type = "multiplicative")
 ```
 ```{r}
+temporalPlot(obs.station,trmm.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
 temporalPlot(obs.station,cal.station,
              xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
 
@@ -349,6 +367,12 @@ trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
   
 cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo",scaling.type = "multiplicative")
 ```
+```{r}
+temporalPlot(obs.station,trmm.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data)),ylab = "mm"))
+
+```
+
 ```{r}
 temporalPlot(obs.station,cal.station,
              xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
