@@ -1,0 +1,407 @@
+---
+title: "Bias correction RMM and VALUE observations time series in the Iberian Peninsula during 1998-2010"
+author: "Óscar Mirones Alonso"
+output: html_notebook
+
+abstract: In this notebook, several standard bias correction methods are made. Four main methods are computed with the biasCorrection function (scale, eqm, pqm and gpqm). Then, the calibrated time series is compared with the observational time series. Also, the comparision between the TRMM time series and the observational time series is made. The goal is is to find out if the calibration is an improvement of the precipitation time series with respect to the TRMM series. 
+---
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(ncdf4)
+library(Metrics)
+```
+
+Load the VALUE package to obtain observational data
+```{r}
+library(VALUE)
+
+value.dataset <- file.path(find.package("VALUE"), "example_datasets", "VALUE_ECA_86_v2.zip")
+
+obs <- loadStationData(dataset = value.dataset, var = "precip",
+                              lonLim = c(-10,4.5),
+                              latLim = c(34.7,44))
+str(obs)
+```
+
+Year subsetting of observational data.
+```{r}
+obs <- subsetGrid(obs, years = 1998:2010)
+temporalPlot(obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+Loading the .ncml file corresponding to TRMM daily data.
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+inventory <- dataInventory("inventory.ncml")
+str(inventory)
+```
+
+TRMM year,longitude and latitude subsetting.
+```{r}
+trmm <- loadGridData(dataset = "C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7/inventory.ncml",
+             var = "precipitation",
+             lonLim = c(-10,4.5),
+             latLim = c(34.7,44) ,
+             years = 1998:2010)
+```
+Complete time series of the total data selected.
+
+```{r}
+temporalPlot(trmm, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+
+Comparision of both time series
+```{r}
+temporalPlot(trmm,obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+
+A bias correction of each method mentioned above is going to be made:
+
+* Scaling
+* Eqm
+* Pqm
+* Gpqm
+
+Then, the comparision between the three time series (observation, trmm and calibration) is shown. For this calibration, we use leave one year out as crossvalidation method.
+```{r}
+cal <- biasCorrection(y = obs, x = trmm, newdata = trmm, precipitation = TRUE, method = "scaling",cross.val = "loo", scaling.type = "multiplicative")
+```
+We plot obs agains cal time series as comparison. Finally, those time series and trmm time series are represented in the same plot. This step is repeated for each method.
+
+```{r}
+temporalPlot(obs,trmm,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(obs,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(obs,trmm,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+cal <- biasCorrection(y = obs, x = trmm, newdata = trmm, precipitation = TRUE,
+                      cross.val = "loo", method = "eqm")
+```
+
+
+```{r}
+temporalPlot(obs,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(obs,trmm,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+
+
+```{r}
+cal <- biasCorrection(y = obs, x = trmm, newdata = trmm, precipitation = TRUE,
+                      cross.val = "loo",
+                      method = "pqm",  fitdistr.args = list(densfun = "gamma"))
+```
+
+
+```{r}
+temporalPlot(obs,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(obs,trmm,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+
+```{r}
+cal <- biasCorrection(y = obs, x = trmm, newdata = trmm, precipitation = TRUE, 
+                      cross.val = "loo",
+                      method = "gpqm", theta = .70)
+```
+
+
+```{r}
+temporalPlot(obs,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(obs,trmm,cal,xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+This methodology is now carried out at a lower level in some of the observation stations.Obs-TRMM and Obs-Cal RMSE (Root Mean Squared Error) is computed in each station.
+
+# MADRID-BARAJAS
+```{r}
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[11])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo", scaling.type = "multiplicative")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "eqm",cross.val = "loo")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "pqm", cross.val = "loo",fitdistr.args = list(densfun = "gamma"))
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "gpqm",cross.val = "loo", theta = 0.70)
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+# MÁLAGA
+
+```{r}
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[4])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling",cross.val = "loo", scaling.type = "multiplicative")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "eqm",cross.val = "loo")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "pqm", cross.val = "loo",fitdistr.args = list(densfun = "gamma"))
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "gpqm",cross.val = "loo", theta = 0.70)
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+
+#PALMA DE MALLORCA
+
+```{r}
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[10])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo",scaling.type = "multiplicative")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "eqm", cross.val = "loo")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "pqm",cross.val = "loo", fitdistr.args = list(densfun = "gamma"))
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "gpqm",cross.val = "loo", theta = 0.70)
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+#SAN SEBASTIÁN-IGUELDO
+
+```{r}
+obs.station <- subsetGrid(obs, station.id = obs$Metadata$station_id[6])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "scaling", cross.val = "loo",scaling.type = "multiplicative")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "eqm",cross.val = "loo")
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "pqm", cross.val = "loo",fitdistr.args = list(densfun = "gamma"))
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+```{r}
+cal.station <- biasCorrection(y = obs.station, x = trmm.station, newdata = trmm.station, precipitation = TRUE, method = "gpqm", cross.val = "loo",theta = 0.70)
+```
+```{r}
+temporalPlot(obs.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n",  "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+
+```
+
+```{r}
+temporalPlot(obs.station,trmm.station,cal.station,
+             xyplot.custom = list(main =paste(obs.station$Metadata$name,"Precipitation",                                         "\n",paste("Station altitude:", obs.station$Metadata$altitude, "m"), "\n", "RMSE Observation-TRMM:", rmse(obs.station$Data, trmm.station$Data), "\n", "RMSE Observation-Calibration:", rmse(obs.station$Data, cal.station$Data)),ylab = "mm"))
+```
+
+
+
