@@ -1,0 +1,311 @@
+---
+title: "Comparison of bias correction methods for TRMM calibration with respect to extreme precipitation events over Iberian Peninsula during 1998-2010"
+author: "Óscar Mirones Alonso"
+output: html_notebook
+abstract: In this notebook, several standard bias correction methods are made. Four main methods are computed with the biasCorrection function (scale, eqm, pqm and gpqm). Then, the index computed with observational data, TRMM non-calibrated data and TRMM-calibrated are compared. The goal is to check the improvement in the index calculation after the bias correction. This methodology is done in four different stations among the Iberian Peninsula (Madrid-Barajas, Málaga, Palma de Mallorca, San Sebastián-Igueldo).
+---
+
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(climate4R.value)
+```
+Load the VALUE package to obtain observational data
+
+
+```{r}
+library(VALUE)
+
+value.dataset <- file.path(find.package("VALUE"), "example_datasets", "VALUE_ECA_86_v2.zip")
+
+obs <- loadStationData(dataset = value.dataset, var = "precip",
+                              lonLim = c(-10,4.5),
+                              latLim = c(34.7,44))
+str(obs)
+```
+Year subsetting of observational data.
+
+```{r}
+obs <- subsetGrid(obs, years = 1998:2010)
+temporalPlot(obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+Loading the .ncml file corresponding to TRMM daily data.
+
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+inventory <- dataInventory("inventory.ncml")
+str(inventory)
+```
+TRMM year,longitude and latitude subsetting.
+
+```{r}
+trmm <- loadGridData(dataset = "C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7/inventory.ncml",
+             var = "precipitation",
+             lonLim = c(-10,4.5),
+             latLim = c(34.7,44) ,
+             years = 1998:2010)
+
+temporalPlot(trmm, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+Comparision of both time series
+
+```{r}
+temporalPlot(trmm,obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+
+```
+Now, for each of the four stations mentioned above, several extreme precipitation event index are computed.
+
+# MADRID-BARAJAS
+
+The index from observational and TRMM data are computed using climate4R.value function valueIndex1D. The index of interest are: Skewness, relative frequency of days with precipitation >= 10 mm (R10), 98-th percentile of wet days,i.e precipitation >= 1 mm, (P98Wet) and total amount above 98-th percentile of wet days (P98WetAmount).
+```{r}
+obs.madrid <- subsetGrid(obs, station.id = obs$Metadata$station_id[11])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.madrid <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+
+```
+
+First, index corresponding to observational and TRMM are calculated below.
+
+```{r}
+index.obs.madrid <- valueIndex1D(obs.madrid$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+#index.obs.madrid.DAMS <- valueIndex(obs.madrid, index.code = "DryAnnualMaxSpell")
+#index.obs.madrid.WAMS <- valueIndex(obs.madrid, index.code = "WetAnnualMaxSpell")
+index.trmm.madrid <- valueIndex1D(trmm.madrid$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+#index.trmm.madrid.DAMS <- valueIndex(trmm.madrid, index.code = "DryAnnualMaxSpell")
+#index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpell")
+```
+A scaling bias correction is made with leave one year out as crossvalidation. Once made this correction, the calibrated TRMM index are computed.
+
+```{r}
+cal.madrid.scaling <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+```
+```{r}
+index.cal.madrid.scaling <- valueIndex1D(cal.madrid.scaling$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+#index.cal.madrid.scaling.DAMS <- valueIndex(cal.madrid.scaling, index.code = "DryAnnualMaxSpell")
+
+#index.cal.madrid.scaling.WAMS <- valueIndex(cal.madrid.scaling, index.code = "WetAnnualMaxSpell")
+```
+
+
+This step is analogue to previous one, in this case the bias correction method is EQM.
+```{r}
+cal.madrid.eqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "eqm")
+```
+Index are computed from the EQM-calibrated TRMM data.
+```{r}
+index.cal.madrid.eqm <- valueIndex1D(cal.madrid.eqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+
+Finally, the steps are repeated using PQM and GPQM as calibration methods.
+```{r}
+cal.madrid.pqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
+
+index.cal.madrid.pqm <- valueIndex1D(cal.madrid.pqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+```{r}
+cal.madrid.gpqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "gpqm",  theta = .70)
+
+index.cal.madrid.gpqm <- valueIndex1D(cal.madrid.gpqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+The results is shown in dataframe format to compare which correction is closer to the observational data.
+```{r}
+results.madrid <- data.frame(index.obs.madrid, index.trmm.madrid, index.cal.madrid.scaling,
+                      index.cal.madrid.eqm, index.cal.madrid.pqm, index.cal.madrid.gpqm
+                      )
+colnames(results.madrid) <- c("Obs","TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+results.madrid
+```
+Also, the difference in absolute value between observational data and calibration data is presented in another dataframe. TRMM differences are also included.
+```{r}
+ diff.madrid <- data.frame(abs(index.obs.madrid-index.trmm.madrid),abs(index.obs.madrid-index.cal.madrid.scaling),
+                      abs(index.obs.madrid-index.cal.madrid.eqm), abs(index.obs.madrid-index.cal.madrid.pqm), abs(index.obs.madrid-index.cal.madrid.gpqm)
+                      )
+colnames(diff.madrid) <- c("TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+diff.madrid
+```
+We can note that, in general, EQM is the best approach for the calibration in Madrid-Barajas station. The least differences with the observation data are principally with EQM calibration. In particular in Skewness, P98Wet and P98WetAmount. The difference are really small, and this shows than a calibration with EQM in this case can improve the quality of the data. The best approach in R10 index is made with Scaling. However, the difference between Scaling and EQM approach is not substantial. Also scaling and PQM are good approaches.
+
+This steps are repeated in several stations of our selection.
+
+# MÁLAGA
+
+In this cell, some steps are taken:
+
+* Subset observational data for the required station 
+* Subset TRMM data for the required station
+* Observational and TRMM index are computed
+* For each calibration method, a dataset calibrated and the index of study are obtained.
+
+```{r}
+obs.malaga <- subsetGrid(obs, station.id = obs$Metadata$station_id[4])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.malaga <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+
+index.obs.malaga <- valueIndex1D(obs.malaga$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+index.trmm.malaga <- valueIndex1D(trmm.malaga$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.malaga.scaling <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+index.cal.malaga.scaling <- valueIndex1D(cal.malaga.scaling$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.malaga.eqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "eqm")
+
+index.cal.malaga.eqm <- valueIndex1D(cal.malaga.eqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.malaga.pqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
+
+index.cal.malaga.pqm <- valueIndex1D(cal.malaga.pqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.malaga.gpqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+index.cal.malaga.gpqm <- valueIndex1D(cal.malaga.gpqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+
+Showing Málaga station results 
+
+```{r}
+results.malaga <- data.frame(index.obs.malaga, index.trmm.malaga, index.cal.malaga.scaling,
+                      index.cal.malaga.eqm, index.cal.malaga.pqm, index.cal.malaga.gpqm
+                      )
+
+colnames(results.malaga) <- c("Obs","TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+results.malaga
+```
+```{r}
+ diff.malaga <- data.frame(abs(index.obs.malaga-index.trmm.malaga),abs(index.obs.malaga-index.cal.malaga.scaling),
+                      abs(index.obs.malaga-index.cal.malaga.eqm), abs(index.obs.malaga-index.cal.malaga.pqm), abs(index.obs.malaga-index.cal.malaga.gpqm)
+                      )
+colnames(diff.malaga) <- c("TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+diff.malaga
+```
+EQM obtains the best results for all the index. Here, the difference in P98WetAmount is notably bigger than Madrid-Barajas station (38.165 vs 5.93). However, the rest of the calibration methods get a difference above 100. PQM is also a good approach. However, scaling shows that is worse than TRMM except for the R10 index and slightly in Skewness. Finally, GPQM is also worse except for the R10 index. The rest of index shows a really poor performance, obtaining rather exorbitant results.
+# PALMA DE MALLORCA
+
+Methodology is the same, but the station to study is Palma de Mallorca
+```{r}
+obs.mallorca <- subsetGrid(obs, station.id = obs$Metadata$station_id[10])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.mallorca <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+
+index.obs.mallorca <- valueIndex1D(obs.mallorca$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+index.trmm.mallorca <- valueIndex1D(trmm.mallorca$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.mallorca.scaling <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+index.cal.mallorca.scaling <- valueIndex1D(cal.mallorca.scaling$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.mallorca.eqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "eqm")
+
+index.cal.mallorca.eqm <- valueIndex1D(cal.mallorca.eqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.mallorca.pqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
+
+index.cal.mallorca.pqm <- valueIndex1D(cal.mallorca.pqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.mallorca.gpqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+index.cal.mallorca.gpqm <- valueIndex1D(cal.mallorca.gpqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+
+
+```{r}
+results.mallorca <- data.frame(index.obs.mallorca, index.trmm.mallorca,index.cal.mallorca.scaling,
+                      index.cal.mallorca.eqm, index.cal.mallorca.pqm, index.cal.mallorca.gpqm
+                      )
+colnames(results.mallorca) <- c("Obs","TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+results.mallorca
+```
+```{r}
+ diff.mallorca <- data.frame(abs(index.obs.mallorca-index.trmm.mallorca),abs(index.obs.mallorca-index.cal.mallorca.scaling),
+                      abs(index.obs.mallorca-index.cal.mallorca.eqm), abs(index.obs.mallorca-index.cal.mallorca.pqm), abs(index.obs.mallorca-index.cal.mallorca.gpqm)
+                      )
+colnames(diff.mallorca) <- c("TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+diff.mallorca
+```
+One more time, EQM gets the best results in all of the index computed. The results are quite good, showing that the calibration matters and is necessary. The performance of the other calibration methods compared to TRMM is quite good too, with the exception of the values for P98WetAmount in general. Also, the value obtained with GPQM calibration in P98Wet Index is really poor(worse than TRMM).
+
+# SAN SEBASTIÁN-IGUELDO
+
+Same with San Sebastián-Igueldo station.
+```{r}
+obs.sansebastian <- subsetGrid(obs, station.id = obs$Metadata$station_id[6])
+idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+lon <- trmm$xyCoords$x[idx]
+  
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.sansebastian <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+
+index.obs.sansebastian <- valueIndex1D(obs.sansebastian$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+index.trmm.sansebastian <- valueIndex1D(trmm.sansebastian$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.sansebastian.scaling <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+index.cal.sansebastian.scaling <- valueIndex1D(cal.sansebastian.scaling$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.sansebastian.eqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "eqm")
+
+index.cal.sansebastian.eqm <- valueIndex1D(cal.sansebastian.eqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.sansebastian.pqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
+
+index.cal.sansebastian.pqm <- valueIndex1D(cal.sansebastian.pqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+
+cal.sansebastian.gpqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+index.cal.sansebastian.gpqm <- valueIndex1D(cal.sansebastian.gpqm$Data,index.codes=c("Skewness","R10","P98Wet","P98WetAmount"))
+```
+
+
+
+```{r}
+results.sansebastian <- data.frame(index.obs.sansebastian, index.trmm.sansebastian, index.cal.sansebastian.scaling,
+                      index.cal.sansebastian.eqm, index.cal.sansebastian.pqm, index.cal.sansebastian.gpqm
+                      )
+colnames(results.sansebastian) <- c("Obs","TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+results.sansebastian
+
+```
+
+```{r}
+ diff.sansebastian <- data.frame(abs(index.obs.sansebastian-index.trmm.sansebastian),abs(index.obs.sansebastian-index.cal.sansebastian.scaling),
+                      abs(index.obs.sansebastian-index.cal.sansebastian.eqm), abs(index.obs.sansebastian-index.cal.sansebastian.pqm), abs(index.obs.sansebastian-index.cal.sansebastian.gpqm)
+                      )
+colnames(diff.sansebastian) <- c("TRMM","Scaling cal.", "EQM cal.", "PQM cal.","GPQM cal.")
+
+diff.sansebastian
+```
+
+In this case, EQM calibration method only is the best approach for one index, R10. GPQM calibration method gets the best results for Skewness and P98Wet indices. Unfortunately, the value for P98WetAmount is really high(+400 of TRMM value.). For the P98WetAmount index, the best approach is using scaling calibration method. EQM get a worse result than TRMM for this index. PQM improve it, however the difference with the observational data is too high(664).
+
+We can conclude that for 3 of the 4 stations, EQM is the best approach getting great results. Calibration methods have been shown necessary for precipitation study with TRMM remote sensing. Scaling and PQM in general give good results too. It seems that the index with worse approach in this calibration is P98WetAmount. The rest of the indices with calibration methods applied have a good approximation in general.The next steps could be to look at which methods overestimate the values of observations and which underestimate them.
