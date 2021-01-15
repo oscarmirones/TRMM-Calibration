@@ -63,13 +63,15 @@ Now, for each of the four stations mentioned above, several extreme precipitatio
 
 # MADRID-BARAJAS
 
-The index from observational and TRMM data are computed using climate4R.value function valueIndex1D. The index of interest are: Skewness, relative frequency of days with precipitation >= 10 mm (R10), 98-th percentile of wet days,i.e precipitation >= 1 mm, (P98Wet) and total amount above 98-th percentile of wet days (P98WetAmount).
+The index from observational and TRMM data are computed using climate4R.value function valueIndex1D. The index of interest are: Skewness, relative frequency of days with precipitation >= 10 mm (R10), precipitation amount falling in days with precip >= 10mm (R10p),relative frequency of days with precipitation >= 20 mm (R20), precipitation amount falling in days with precip >= 20mm (R20p),
+ 98-th percentile of wet days,i.e precipitation >= 1 mm, (P98Wet) and total amount above 98-th percentile of wet days (P98WetAmount).
 ```{r}
 obs.madrid <- subsetGrid(obs, station.id = obs$Metadata$station_id[11])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.madrid$xyCoords$x))
+ 
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.madrid$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.madrid <- subsetGrid(trmm, lonLim = lon, latLim = lat)
@@ -80,11 +82,9 @@ First, index corresponding to observational and TRMM are calculated below.
 
 ```{r}
 index.obs.madrid <- valueIndex1D(obs.madrid$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
-#index.obs.madrid.DAMS <- valueIndex(obs.madrid, index.code = "DryAnnualMaxSpell")
-#index.obs.madrid.WAMS <- valueIndex(obs.madrid, index.code = "WetAnnualMaxSpell")
+index.obs.madrid.WAMS <- valueIndex(obs.madrid, index.code = "WetAnnualMaxSpell")
 index.trmm.madrid <- valueIndex1D(trmm.madrid$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
-#index.trmm.madrid.DAMS <- valueIndex(trmm.madrid, index.code = "DryAnnualMaxSpell")
-#index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpell")
+index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpell")
 ```
 A scaling bias correction is made with leave one year out as crossvalidation. Once made this correction, the calibrated TRMM index are computed.
 
@@ -131,6 +131,14 @@ cal.madrid.gpqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trm
 
 index.cal.madrid.gpqm <- valueIndex1D(cal.madrid.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
+```{r}
+index.obs.madrid.WAMS <- valueIndex(obs.madrid, index.code = "WetAnnualMaxSpell")
+index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpell")
+#index.cal.madrid.eqm.WAMS <- valueIndex(cal.madrid.eqm, index.code = "WetAnnualMaxSpell", return.NApercentage = TRUE)
+
+```
+
+
 The results is shown in dataframe format to compare which correction is closer to the observational data.
 ```{r}
 results.madrid <- data.frame(index.obs.madrid, index.trmm.madrid, index.cal.madrid.scaling,
@@ -290,7 +298,7 @@ points(sort(obs.madrid$Data), sort(cal.madrid.gpqm$Data), col = "blue")
 
 legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red", "blue"))
 ```
-We can note that, in general, EQM is the best approach for the calibration in Madrid-Barajas station. The least differences with the observation data are principally with EQM calibration. In particular in Skewness, P98Wet and P98WetAmount. The difference are really small, and this shows than a calibration with EQM in this case can improve the quality of the data. The best approach in R10 index is made with Scaling. However, the difference between Scaling and EQM approach is not substantial. Also scaling and PQM are good approaches.
+We can note that, in general, EQM is the best approach for the calibration in Madrid-Barajas station. The least differences with the observation data are principally with EQM calibration. In particular in Skewness, R10, R20 and R20p. The difference are really small, and this shows than a calibration with EQM in this case can improve the quality of the data. The best approach in R10p index is made with PQM. Finally, for P98Wet and P98WetAmount indices the best correction is made with GPQM, although the values corrected are quite similar to the obtained with EQM. 
 
 Before analyzing another station, let check the density function of Observational, TRMM and TRMM calibrated data. The aim is to check that TRMM calibrated density function approximates well the observational density function. In the other side, we also show that TRMM raw density funciton is a worse approximation.
 
@@ -307,10 +315,10 @@ In this cell, some steps are taken:
 
 ```{r eval = FALSE}
 obs.malaga <- subsetGrid(obs, station.id = obs$Metadata$station_id[4])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.malaga$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.malaga$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.malaga <- subsetGrid(trmm, lonLim = lon, latLim = lat)
@@ -401,7 +409,7 @@ formattable(diff.malaga.noabs, list(
  ))
 ```
 
-EQM obtains the best results for all the index. Here, the difference in P98WetAmount is notably bigger than Madrid-Barajas station (38.165 vs 5.93). However, the rest of the calibration methods get a difference above 100. PQM is also a good approach. However, scaling shows that is worse than TRMM except for the R10 index and slightly in Skewness. Finally, GPQM is also worse except for the R10 index. The rest of index shows a really poor performance, obtaining rather exorbitant results.
+Here we have a greater variety in terms of indices that work better in the correction. PQM is the best option for R10, R20p and P98WetAmount. EQm with extrapolation has the best results in Skewness approximation, as scaling is the best choice for R20 index. Finally, surprisingly TRMM in some indices has the best approximation. R10p and P98Wet are these indices. 
 
 ```{r}
 plot(density(obs.malaga$Data, na.rm = TRUE),
@@ -504,10 +512,10 @@ legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red"
 Methodology is the same, but the station to study is Palma de Mallorca
 ```{r eval = FALSE}
 obs.mallorca <- subsetGrid(obs, station.id = obs$Metadata$station_id[10])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.mallorca$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.mallorca$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.mallorca <- subsetGrid(trmm, lonLim = lon, latLim = lat)
@@ -698,10 +706,10 @@ One more time, EQM gets the best results in all of the index computed. The resul
 Same with San Sebastián-Igueldo station.
 ```{r eval = FALSE}
 obs.sansebastian <- subsetGrid(obs, station.id = obs$Metadata$station_id[6])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.sansebastian$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.sansebastian$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.sansebastian <- subsetGrid(trmm, lonLim = lon, latLim = lat)
@@ -895,10 +903,10 @@ We can conclude that for 3 of the 4 stations, EQM is the best approach getting g
 
 ```{r eval = FALSE}
 obs.navacerrada <- subsetGrid(obs, station.id = obs$Metadata$station_id[5])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.navacerrada$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.navacerrada$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.navacerrada <- subsetGrid(trmm, lonLim = lon, latLim = lat)
@@ -1085,10 +1093,10 @@ legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red"
 
 ```{r eval = FALSE}
 obs.santiago <- subsetGrid(obs, station.id = obs$Metadata$station_id[9])
-idx <- which.min(abs(trmm$xyCoords$x - obs.station$xyCoords$x))
+idx <- which.min(abs(trmm$xyCoords$x - obs.santiago$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
   
-idx2 <- which.min(abs(trmm$xyCoords$y - obs.station$xyCoords$y))
+idx2 <- which.min(abs(trmm$xyCoords$y - obs.santiago$xyCoords$y))
 lat <- trmm$xyCoords$y[idx2]
   
 trmm.santiago <- subsetGrid(trmm, lonLim = lon, latLim = lat)
