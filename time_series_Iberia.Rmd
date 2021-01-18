@@ -50,7 +50,7 @@ joinNewAggregation <- function(source.dir,ncml.file, dest.dir){
   setwd(dest.dir)
   
   #list files from directory
-  lf <- normalizePath(list.files(source.dir, full.names = TRUE), winslash = "/")
+  lf <- normalizePath(list.files(source.dir, full.names = TRUE, recursive = TRUE), winslash = "/")
   lf <- grep("nc4", lf, value = TRUE)
   message("[",Sys.time(),"] Creating dataset from ", length(lf), " files")
   
