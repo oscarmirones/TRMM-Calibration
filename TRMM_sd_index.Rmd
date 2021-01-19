@@ -8,7 +8,7 @@ abstract: In this notebook, several standard bias correction methods are made. F
 
 
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 library(loadeR)
 library(transformeR)
 library(downscaleR)
@@ -19,7 +19,7 @@ library(formattable)
 Load the VALUE package to obtain observational data
 
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE, message=FALSE}
 library(VALUE)
 
 value.dataset <- file.path(find.package("VALUE"), "example_datasets", "VALUE_ECA_86_v2.zip")
@@ -89,7 +89,7 @@ index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpel
 ```
 A scaling bias correction is made with leave one year out as crossvalidation. Once made this correction, the calibrated TRMM index are computed.
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 cal.madrid.scaling <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
 
 cal.madrid.scaling$Dates$start <- as.POSIXct(cal.madrid.scaling$Dates$start,tz = "GMT")
@@ -104,7 +104,7 @@ index.cal.madrid.scaling.WAMS <- valueIndex(cal.madrid.scaling, index.code = "We
 
 
 This step is analogue to previous one, in this case the bias correction method is EQM.
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 cal.madrid.eqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
 cal.madrid.eqm$Dates$start <- as.POSIXct(cal.madrid.eqm$Dates$start,tz = "GMT")
@@ -114,13 +114,13 @@ cal.madrid.eqm$Dates$end <- as.POSIXct(cal.madrid.eqm$Dates$end,tz = "GMT")
 
 
 Index are computed from the EQM-calibrated TRMM data.
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE, message=FALSE}
 index.cal.madrid.eqm <- valueIndex1D(cal.madrid.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 index.cal.madrid.eqm.WAMS <- valueIndex(cal.madrid.eqm,index.code = "WetAnnualMaxSpell")
 ```
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE, message=FALSE}
 cal.madrid.eqm.extrapol <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "eqm", extrapolation = "constant")
 
 cal.madrid.eqm.extrapol$Dates$start <- as.POSIXct(cal.madrid.eqm.extrapol$Dates$start,tz = "GMT")
@@ -134,7 +134,7 @@ index.cal.madrid.eqm.extrapol.WAMS <- valueIndex(cal.madrid.eqm.extrapol, index.
 ```
 
 Finally, these steps are repeated using PQM and GPQM as calibration methods.
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 cal.madrid.pqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
 cal.madrid.pqm$Dates$start <- as.POSIXct(cal.madrid.pqm$Dates$start,tz = "GMT")
@@ -145,7 +145,7 @@ index.cal.madrid.pqm <- valueIndex1D(cal.madrid.pqm$Data,index.codes=c("Skewness
 index.cal.madrid.pqm.WAMS <- valueIndex(cal.madrid.pqm, index.code = "WetAnnualMaxSpell")
 ```
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE, message=FALSE}
 cal.madrid.gpqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "gpqm",  theta = .70)
 
 cal.madrid.gpqm$Dates$start <- as.POSIXct(cal.madrid.gpqm$Dates$start,tz = "GMT")
@@ -347,7 +347,7 @@ In this cell, some steps are taken:
 * Observational and TRMM index are computed
 * For each calibration method, a dataset calibrated and the index of study are obtained.
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 obs.malaga <- subsetGrid(obs, station.id = obs$Metadata$station_id[4])
 idx <- which.min(abs(trmm$xyCoords$x - obs.malaga$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
@@ -589,7 +589,7 @@ legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red"
 # PALMA DE MALLORCA
 
 Methodology is the same, but the station to study is Palma de Mallorca
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 obs.mallorca <- subsetGrid(obs, station.id = obs$Metadata$station_id[10])
 idx <- which.min(abs(trmm$xyCoords$x - obs.mallorca$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
@@ -830,7 +830,7 @@ One more time, EQM gets the best results in all of the index computed. The resul
 # SAN SEBASTIÁN-IGUELDO
 
 Same with San Sebastián-Igueldo station.
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 obs.sansebastian <- subsetGrid(obs, station.id = obs$Metadata$station_id[6])
 idx <- which.min(abs(trmm$xyCoords$x - obs.sansebastian$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
@@ -1076,7 +1076,7 @@ We can conclude that for 3 of the 4 stations, EQM is the best approach getting g
 
 # Navacerrada
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE,  message=FALSE}
 obs.navacerrada <- subsetGrid(obs, station.id = obs$Metadata$station_id[5])
 idx <- which.min(abs(trmm$xyCoords$x - obs.navacerrada$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
@@ -1312,7 +1312,7 @@ legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red"
 
 # Santiago de Compostela
 
-```{r,eval=TRUE, echo = FALSE, message=FALSE}
+```{r eval=TRUE, message=FALSE}
 obs.santiago <- subsetGrid(obs, station.id = obs$Metadata$station_id[9])
 idx <- which.min(abs(trmm$xyCoords$x - obs.santiago$xyCoords$x))
 lon <- trmm$xyCoords$x[idx]
