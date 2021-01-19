@@ -24,9 +24,10 @@ library(VALUE)
 
 value.dataset <- file.path(find.package("VALUE"), "example_datasets", "VALUE_ECA_86_v2.zip")
 
-obs <- loadStationData(dataset = value.dataset, var = "precip",
+obs <- loadStationData(dataset = value.dataset, var = "precip", tz = "GMT",
                               lonLim = c(-10,4.5),
-                              latLim = c(34.7,44))
+                              latLim = c(34.7,44),
+                                )
 ```
 Year subsetting of observational data.
 
@@ -90,19 +91,24 @@ A scaling bias correction is made with leave one year out as crossvalidation. On
 
 ```{r eval = FALSE}
 cal.madrid.scaling <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.madrid.scaling$Dates$start <- as.POSIXct(cal.madrid.scaling$Dates$start,tz = "GMT")
+cal.madrid.scaling$Dates$end <- as.POSIXct(cal.madrid.scaling$Dates$end,tz = "GMT")
 ```
 ```{r}
 index.cal.madrid.scaling <- valueIndex1D(cal.madrid.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
-#index.cal.madrid.scaling.DAMS <- valueIndex(cal.madrid.scaling, index.code = "DryAnnualMaxSpell")
 
-#index.cal.madrid.scaling.WAMS <- valueIndex(cal.madrid.scaling, index.code = "WetAnnualMaxSpell")
+index.cal.madrid.scaling.WAMS <- valueIndex(cal.madrid.scaling, index.code = "WetAnnualMaxSpell")
 ```
 
 
 This step is analogue to previous one, in this case the bias correction method is EQM.
 ```{r eval = FALSE}
 cal.madrid.eqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "eqm")
+
+cal.madrid.eqm$Dates$start <- as.POSIXct(cal.madrid.eqm$Dates$start,tz = "GMT")
+cal.madrid.eqm$Dates$end <- as.POSIXct(cal.madrid.eqm$Dates$end,tz = "GMT")
 ```
 
 
@@ -110,37 +116,71 @@ cal.madrid.eqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm
 Index are computed from the EQM-calibrated TRMM data.
 ```{r}
 index.cal.madrid.eqm <- valueIndex1D(cal.madrid.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+index.cal.madrid.eqm.WAMS <- valueIndex(cal.madrid.eqm,index.code = "WetAnnualMaxSpell")
 ```
 
 ```{r eval = FALSE}
 cal.madrid.eqm.extrapol <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "eqm", extrapolation = "constant")
+
+cal.madrid.eqm.extrapol$Dates$start <- as.POSIXct(cal.madrid.eqm.extrapol$Dates$start,tz = "GMT")
+cal.madrid.eqm.extrapol$Dates$end <- as.POSIXct(cal.madrid.eqm.extrapol$Dates$end,tz = "GMT")
 ```
 
 ```{r}
 index.cal.madrid.eqm.extrapol <- valueIndex1D(cal.madrid.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+index.cal.madrid.eqm.extrapol.WAMS <- valueIndex(cal.madrid.eqm.extrapol, index.code = "WetAnnualMaxSpell")
 ```
 
 Finally, these steps are repeated using PQM and GPQM as calibration methods.
 ```{r eval = FALSE}
 cal.madrid.pqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.madrid.pqm$Dates$start <- as.POSIXct(cal.madrid.pqm$Dates$start,tz = "GMT")
+cal.madrid.pqm$Dates$end <- as.POSIXct(cal.madrid.pqm$Dates$end,tz = "GMT")
+
 index.cal.madrid.pqm <- valueIndex1D(cal.madrid.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+index.cal.madrid.pqm.WAMS <- valueIndex(cal.madrid.pqm, index.code = "WetAnnualMaxSpell")
 ```
 ```{r eval = FALSE}
 cal.madrid.gpqm <- biasCorrection(y = obs.madrid, x = trmm.madrid, newdata = trmm.madrid, precipitation = TRUE, cross.val = "loo", method = "gpqm",  theta = .70)
 
+cal.madrid.gpqm$Dates$start <- as.POSIXct(cal.madrid.gpqm$Dates$start,tz = "GMT")
+cal.madrid.gpqm$Dates$end <- as.POSIXct(cal.madrid.gpqm$Dates$end,tz = "GMT")
+
 index.cal.madrid.gpqm <- valueIndex1D(cal.madrid.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+index.cal.madrid.gpqm.WAMS <- valueIndex(cal.madrid.gpqm, index.code = "WetAnnualMaxSpell")
 ```
 ```{r}
 index.obs.madrid.WAMS <- valueIndex(obs.madrid, index.code = "WetAnnualMaxSpell")
 index.trmm.madrid.WAMS <- valueIndex(trmm.madrid, index.code = "WetAnnualMaxSpell")
-#index.cal.madrid.eqm.WAMS <- valueIndex(cal.madrid.eqm, index.code = "WetAnnualMaxSpell", return.NApercentage = TRUE)
+
 
 ```
 
 
 The results is shown in dataframe format to compare which correction is closer to the observational data.
 ```{r}
+names(index.obs.madrid.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.madrid.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.madrid.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.madrid.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.madrid.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.madrid.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.madrid.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.madrid <- c(index.obs.madrid,index.obs.madrid.WAMS$Index$Data)
+index.trmm.madrid <- c(index.trmm.madrid,index.trmm.madrid.WAMS$Index$Data)
+index.cal.madrid.scaling <- c(index.cal.madrid.scaling,index.cal.madrid.scaling.WAMS$Index$Data)
+index.cal.madrid.eqm <- c(index.cal.madrid.eqm,index.cal.madrid.eqm.WAMS$Index$Data)
+index.cal.madrid.eqm.extrapol <- c(index.cal.madrid.eqm.extrapol,index.cal.madrid.eqm.extrapol.WAMS$Index$Data)
+index.cal.madrid.pqm <- c(index.cal.madrid.pqm,index.cal.madrid.pqm.WAMS$Index$Data)
+index.cal.madrid.gpqm <- c(index.cal.madrid.gpqm,index.cal.madrid.gpqm.WAMS$Index$Data)
+
+
 results.madrid <- data.frame(index.obs.madrid, index.trmm.madrid, index.cal.madrid.scaling,
                       index.cal.madrid.eqm,index.cal.madrid.eqm.extrapol, index.cal.madrid.pqm, index.cal.madrid.gpqm
                       )
@@ -327,23 +367,52 @@ index.obs.malaga <- valueIndex1D(obs.malaga$Data,index.codes=c("Skewness","R10",
 
 index.trmm.malaga <- valueIndex1D(trmm.malaga$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
+index.obs.malaga.WAMS <- valueIndex(obs.malaga, index.code = "WetAnnualMaxSpell")
+
+index.trmm.malaga.WAMS <- valueIndex(trmm.malaga, index.code = "WetAnnualMaxSpell")
+
 cal.malaga.scaling <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.malaga.scaling$Dates$start <- as.POSIXct(cal.malaga.scaling$Dates$start,tz = "GMT")
+cal.malaga.scaling$Dates$end <- as.POSIXct(cal.malaga.scaling$Dates$end,tz = "GMT")
+
+index.cal.malaga.scaling.WAMS <- valueIndex(cal.malaga.scaling, index.code = "WetAnnualMaxSpell")
 
 index.cal.malaga.scaling <- valueIndex1D(cal.malaga.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.malaga.eqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
+cal.malaga.eqm$Dates$start <- as.POSIXct(cal.malaga.eqm$Dates$start,tz = "GMT")
+cal.malaga.eqm$Dates$end <- as.POSIXct(cal.malaga.eqm$Dates$end,tz = "GMT")
+
+index.cal.malaga.eqm.WAMS <- valueIndex(cal.malaga.eqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.malaga.eqm <- valueIndex1D(cal.malaga.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.malaga.eqm.extrapol <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "eqm",extrapolation = "constant")
+
+cal.malaga.eqm.extrapol$Dates$start <- as.POSIXct(cal.malaga.eqm.extrapol$Dates$start,tz = "GMT")
+cal.malaga.eqm.extrapol$Dates$end <- as.POSIXct(cal.malaga.eqm.extrapol$Dates$end,tz = "GMT")
+
+index.cal.malaga.eqm.extrapol.WAMS <- valueIndex(cal.malaga.eqm.extrapol, index.code = "WetAnnualMaxSpell")
 
 index.cal.malaga.eqm.extrapol <- valueIndex1D(cal.malaga.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.malaga.pqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.malaga.pqm$Dates$start <- as.POSIXct(cal.malaga.pqm$Dates$start,tz = "GMT")
+cal.malaga.pqm$Dates$end <- as.POSIXct(cal.malaga.pqm$Dates$end,tz = "GMT")
+
+index.cal.malaga.pqm.WAMS <- valueIndex(cal.malaga.pqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.malaga.pqm <- valueIndex1D(cal.malaga.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.malaga.gpqm <- biasCorrection(y = obs.malaga, x = trmm.malaga, newdata = trmm.malaga, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+cal.malaga.gpqm$Dates$start <- as.POSIXct(cal.malaga.gpqm$Dates$start,tz = "GMT")
+cal.malaga.gpqm$Dates$end <- as.POSIXct(cal.malaga.gpqm$Dates$end,tz = "GMT")
+
+index.cal.malaga.gpqm.WAMS <- valueIndex(cal.malaga.gpqm, index.code = "WetAnnualMaxSpell")
 
 index.cal.malaga.gpqm <- valueIndex1D(cal.malaga.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
@@ -351,6 +420,22 @@ index.cal.malaga.gpqm <- valueIndex1D(cal.malaga.gpqm$Data,index.codes=c("Skewne
 Showing Málaga station results 
 
 ```{r}
+names(index.obs.malaga.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.malaga.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.malaga.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.malaga.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.malaga.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.malaga.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.malaga.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.malaga <- c(index.obs.malaga,index.obs.malaga.WAMS$Index$Data)
+index.trmm.malaga <- c(index.trmm.malaga,index.trmm.malaga.WAMS$Index$Data)
+index.cal.malaga.scaling <- c(index.cal.malaga.scaling,index.cal.malaga.scaling.WAMS$Index$Data)
+index.cal.malaga.eqm <- c(index.cal.malaga.eqm,index.cal.malaga.eqm.WAMS$Index$Data)
+index.cal.malaga.eqm.extrapol <- c(index.cal.malaga.eqm.extrapol,index.cal.malaga.eqm.extrapol.WAMS$Index$Data)
+index.cal.malaga.pqm <- c(index.cal.malaga.pqm,index.cal.malaga.pqm.WAMS$Index$Data)
+index.cal.malaga.gpqm <- c(index.cal.malaga.gpqm,index.cal.malaga.gpqm.WAMS$Index$Data)
+
 results.malaga <- data.frame(index.obs.malaga, index.trmm.malaga, index.cal.malaga.scaling,
                       index.cal.malaga.eqm,index.cal.malaga.eqm.extrapol, index.cal.malaga.pqm, index.cal.malaga.gpqm
                       )
@@ -524,29 +609,76 @@ index.obs.mallorca <- valueIndex1D(obs.mallorca$Data,index.codes=c("Skewness","R
 
 index.trmm.mallorca <- valueIndex1D(trmm.mallorca$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
+index.obs.mallorca.WAMS <- valueIndex(obs.mallorca,index.code = "WetAnnualMaxSpell")
+
+index.trmm.mallorca.WAMS <- valueIndex(trmm.mallorca, index.code = "WetAnnualMaxSpell")
+
 cal.mallorca.scaling <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.mallorca.scaling$Dates$start <- as.POSIXct(cal.mallorca.scaling$Dates$start,tz = "GMT")
+cal.mallorca.scaling$Dates$end <- as.POSIXct(cal.mallorca.scaling$Dates$end,tz = "GMT")
+
+index.cal.mallorca.scaling.WAMS <- valueIndex(cal.mallorca.scaling, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.mallorca.scaling <- valueIndex1D(cal.mallorca.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.mallorca.eqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
+cal.mallorca.eqm$Dates$start <- as.POSIXct(cal.mallorca.eqm$Dates$start,tz = "GMT")
+cal.mallorca.eqm$Dates$end <- as.POSIXct(cal.mallorca.eqm$Dates$end,tz = "GMT")
+
+index.cal.mallorca.eqm.WAMS <- valueIndex(cal.mallorca.eqm, index.code = "WetAnnualMaxSpell")
+
+
 index.cal.mallorca.eqm <- valueIndex1D(cal.mallorca.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.mallorca.eqm.extrapol <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "eqm", extrapolation = "constant")
+
+cal.mallorca.eqm.extrapol$Dates$start <- as.POSIXct(cal.mallorca.eqm.extrapol$Dates$start,tz = "GMT")
+cal.mallorca.eqm.extrapol$Dates$end <- as.POSIXct(cal.mallorca.eqm.extrapol$Dates$end,tz = "GMT")
+
+index.cal.mallorca.eqm.extrapol.WAMS <- valueIndex(cal.mallorca.eqm.extrapol, index.code = "WetAnnualMaxSpell")
 
 index.cal.mallorca.eqm.extrapol <- valueIndex1D(cal.mallorca.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.mallorca.pqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.mallorca.pqm$Dates$start <- as.POSIXct(cal.mallorca.pqm$Dates$start,tz = "GMT")
+cal.mallorca.pqm$Dates$end <- as.POSIXct(cal.mallorca.pqm$Dates$end,tz = "GMT")
+
+index.cal.mallorca.pqm.WAMS <- valueIndex(cal.mallorca.pqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.mallorca.pqm <- valueIndex1D(cal.mallorca.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.mallorca.gpqm <- biasCorrection(y = obs.mallorca, x = trmm.mallorca, newdata = trmm.mallorca, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+cal.mallorca.gpqm$Dates$start <- as.POSIXct(cal.mallorca.gpqm$Dates$start,tz = "GMT")
+cal.mallorca.gpqm$Dates$end <- as.POSIXct(cal.mallorca.gpqm$Dates$end,tz = "GMT")
+
+index.cal.mallorca.gpqm.WAMS <- valueIndex(cal.mallorca.gpqm, index.code = "WetAnnualMaxSpell")
 
 index.cal.mallorca.gpqm <- valueIndex1D(cal.mallorca.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
 
 
 ```{r}
+names(index.obs.mallorca.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.mallorca.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.mallorca.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.mallorca.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.mallorca.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.mallorca.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.mallorca.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.mallorca <- c(index.obs.mallorca,index.obs.mallorca.WAMS$Index$Data)
+index.trmm.mallorca <- c(index.trmm.mallorca,index.trmm.mallorca.WAMS$Index$Data)
+index.cal.mallorca.scaling <- c(index.cal.mallorca.scaling,index.cal.mallorca.scaling.WAMS$Index$Data)
+index.cal.mallorca.eqm <- c(index.cal.mallorca.eqm,index.cal.mallorca.eqm.WAMS$Index$Data)
+index.cal.mallorca.eqm.extrapol <- c(index.cal.mallorca.eqm.extrapol,index.cal.mallorca.eqm.extrapol.WAMS$Index$Data)
+index.cal.mallorca.pqm <- c(index.cal.mallorca.pqm,index.cal.mallorca.pqm.WAMS$Index$Data)
+index.cal.mallorca.gpqm <- c(index.cal.mallorca.gpqm,index.cal.mallorca.gpqm.WAMS$Index$Data)
+
 results.mallorca <- data.frame(index.obs.mallorca, index.trmm.mallorca,index.cal.mallorca.scaling,
                       index.cal.mallorca.eqm, index.cal.mallorca.eqm.extrapol ,index.cal.mallorca.pqm, index.cal.mallorca.gpqm
                       )
@@ -718,23 +850,56 @@ index.obs.sansebastian <- valueIndex1D(obs.sansebastian$Data,index.codes=c("Skew
 
 index.trmm.sansebastian <- valueIndex1D(trmm.sansebastian$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
+index.obs.sansebastian.WAMS <- valueIndex(obs.sansebastian, index.code = "WetAnnualMaxSpell")
+index.trmm.sansebastian.WAMS <- valueIndex(trmm.sansebastian, index.code = "WetAnnualMaxSpell")
+
 cal.sansebastian.scaling <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.sansebastian.scaling$Dates$start <- as.POSIXct(cal.sansebastian.scaling$Dates$start,tz = "GMT")
+cal.sansebastian.scaling$Dates$end <- as.POSIXct(cal.sansebastian.scaling$Dates$end,tz = "GMT")
+
+index.cal.sansebastian.scaling.WAMS <- valueIndex(cal.sansebastian.scaling, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.sansebastian.scaling <- valueIndex1D(cal.sansebastian.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.sansebastian.eqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
+cal.sansebastian.eqm$Dates$start <- as.POSIXct(cal.sansebastian.eqm$Dates$start,tz = "GMT")
+cal.sansebastian.eqm$Dates$end <- as.POSIXct(cal.sansebastian.eqm$Dates$end,tz = "GMT")
+
+index.cal.sansebastian.eqm.WAMS <- valueIndex(cal.sansebastian.eqm, index.code = "WetAnnualMaxSpell")
+
+
 index.cal.sansebastian.eqm <- valueIndex1D(cal.sansebastian.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.sansebastian.eqm.extrapol <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "eqm", extrapolation = "constant")
+
+cal.sansebastian.eqm.extrapol$Dates$start <- as.POSIXct(cal.sansebastian.eqm.extrapol$Dates$start,tz = "GMT")
+cal.sansebastian.eqm.extrapol$Dates$end <- as.POSIXct(cal.sansebastian.eqm.extrapol$Dates$end,tz = "GMT")
+
+index.cal.sansebastian.eqm.extrapol.WAMS <- valueIndex(cal.sansebastian.eqm.extrapol, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.sansebastian.eqm.extrapol <- valueIndex1D(cal.sansebastian.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.sansebastian.pqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.sansebastian.pqm$Dates$start <- as.POSIXct(cal.sansebastian.pqm$Dates$start,tz = "GMT")
+cal.sansebastian.pqm$Dates$end <- as.POSIXct(cal.sansebastian.pqm$Dates$end,tz = "GMT")
+
+index.cal.sansebastian.pqm.WAMS <- valueIndex(cal.sansebastian.pqm, index.code = "WetAnnualMaxSpell")
+
+
 index.cal.sansebastian.pqm <- valueIndex1D(cal.sansebastian.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.sansebastian.gpqm <- biasCorrection(y = obs.sansebastian, x = trmm.sansebastian, newdata = trmm.sansebastian, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+cal.sansebastian.gpqm$Dates$start <- as.POSIXct(cal.sansebastian.gpqm$Dates$start,tz = "GMT")
+cal.sansebastian.gpqm$Dates$end <- as.POSIXct(cal.sansebastian.gpqm$Dates$end,tz = "GMT")
+
+index.cal.sansebastian.gpqm.WAMS <- valueIndex(cal.sansebastian.gpqm, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.sansebastian.gpqm <- valueIndex1D(cal.sansebastian.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
@@ -742,6 +907,22 @@ index.cal.sansebastian.gpqm <- valueIndex1D(cal.sansebastian.gpqm$Data,index.cod
 
 
 ```{r}
+names(index.obs.sansebastian.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.sansebastian.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.sansebastian.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.sansebastian.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.sansebastian.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.sansebastian.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.sansebastian.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.sansebastian <- c(index.obs.sansebastian,index.obs.sansebastian.WAMS$Index$Data)
+index.trmm.sansebastian <- c(index.trmm.sansebastian,index.trmm.sansebastian.WAMS$Index$Data)
+index.cal.sansebastian.scaling <- c(index.cal.sansebastian.scaling,index.cal.sansebastian.scaling.WAMS$Index$Data)
+index.cal.sansebastian.eqm <- c(index.cal.sansebastian.eqm,index.cal.sansebastian.eqm.WAMS$Index$Data)
+index.cal.sansebastian.eqm.extrapol <- c(index.cal.sansebastian.eqm.extrapol,index.cal.sansebastian.eqm.extrapol.WAMS$Index$Data)
+index.cal.sansebastian.pqm <- c(index.cal.sansebastian.pqm,index.cal.sansebastian.pqm.WAMS$Index$Data)
+index.cal.sansebastian.gpqm <- c(index.cal.sansebastian.gpqm,index.cal.sansebastian.gpqm.WAMS$Index$Data)
+
 results.sansebastian <- data.frame(index.obs.sansebastian, index.trmm.sansebastian, index.cal.sansebastian.scaling,
                       index.cal.sansebastian.eqm,index.cal.sansebastian.eqm.extrapol, index.cal.sansebastian.pqm, index.cal.sansebastian.gpqm
                       )
@@ -911,32 +1092,78 @@ lat <- trmm$xyCoords$y[idx2]
   
 trmm.navacerrada <- subsetGrid(trmm, lonLim = lon, latLim = lat)
 
+index.obs.navacerrada.WAMS <- valueIndex(obs.navacerrada, index.code = "WetAnnualMaxSpell")
+index.trmm.navacerrada.WAMS <- valueIndex(trmm.navacerrada, index.code = "WetAnnualMaxSpell")
+
 index.obs.navacerrada <- valueIndex1D(obs.navacerrada$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 index.trmm.navacerrada <- valueIndex1D(trmm.navacerrada$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
+
 cal.navacerrada.scaling <- biasCorrection(y = obs.navacerrada, x = trmm.navacerrada, newdata = trmm.navacerrada, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.navacerrada.scaling$Dates$start <- as.POSIXct(cal.navacerrada.scaling$Dates$start,tz = "GMT")
+cal.navacerrada.scaling$Dates$end <- as.POSIXct(cal.navacerrada.scaling$Dates$end,tz = "GMT")
+
+index.cal.navacerrada.scaling.WAMS <- valueIndex(cal.navacerrada.scaling, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.navacerrada.scaling <- valueIndex1D(cal.navacerrada.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.navacerrada.eqm <- biasCorrection(y = obs.navacerrada, x = trmm.navacerrada, newdata = trmm.navacerrada, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
+cal.navacerrada.eqm$Dates$start <- as.POSIXct(cal.navacerrada.eqm$Dates$start,tz = "GMT")
+cal.navacerrada.eqm$Dates$end <- as.POSIXct(cal.navacerrada.eqm$Dates$end,tz = "GMT")
+
+index.cal.navacerrada.eqm.WAMS <- valueIndex(cal.navacerrada.eqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.navacerrada.eqm <- valueIndex1D(cal.navacerrada.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.navacerrada.eqm.extrapol <- biasCorrection(y = obs.navacerrada, x = trmm.navacerrada, newdata = trmm.navacerrada, precipitation = TRUE, cross.val = "loo", method = "eqm",extrapolation = "constant")
+
+cal.navacerrada.eqm.extrapol$Dates$start <- as.POSIXct(cal.navacerrada.eqm.extrapol$Dates$start,tz = "GMT")
+cal.navacerrada.eqm.extrapol$Dates$end <- as.POSIXct(cal.navacerrada.eqm.extrapol$Dates$end,tz = "GMT")
+
+index.cal.navacerrada.eqm.extrapol.WAMS <- valueIndex(cal.navacerrada.eqm.extrapol, index.code = "WetAnnualMaxSpell")
 
 index.cal.navacerrada.eqm.extrapol <- valueIndex1D(cal.navacerrada.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.navacerrada.pqm <- biasCorrection(y = obs.navacerrada, x = trmm.navacerrada, newdata = trmm.navacerrada, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.navacerrada.pqm$Dates$start <- as.POSIXct(cal.navacerrada.pqm$Dates$start,tz = "GMT")
+cal.navacerrada.pqm$Dates$end <- as.POSIXct(cal.navacerrada.pqm$Dates$end,tz = "GMT")
+
+index.cal.navacerrada.pqm.WAMS <- valueIndex(cal.navacerrada.pqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.navacerrada.pqm <- valueIndex1D(cal.navacerrada.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.navacerrada.gpqm <- biasCorrection(y = obs.navacerrada, x = trmm.navacerrada, newdata = trmm.navacerrada, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+cal.navacerrada.gpqm$Dates$start <- as.POSIXct(cal.navacerrada.gpqm$Dates$start,tz = "GMT")
+cal.navacerrada.gpqm$Dates$end <- as.POSIXct(cal.navacerrada.gpqm$Dates$end,tz = "GMT")
+
+index.cal.navacerrada.gpqm.WAMS <- valueIndex(cal.navacerrada.gpqm, index.code = "WetAnnualMaxSpell")
 
 index.cal.navacerrada.gpqm <- valueIndex1D(cal.navacerrada.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
 
 ```{r}
+names(index.obs.navacerrada.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.navacerrada.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.navacerrada.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.navacerrada.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.navacerrada.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.navacerrada.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.navacerrada.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.navacerrada <- c(index.obs.navacerrada,index.obs.navacerrada.WAMS$Index$Data)
+index.trmm.navacerrada <- c(index.trmm.navacerrada,index.trmm.navacerrada.WAMS$Index$Data)
+index.cal.navacerrada.scaling <- c(index.cal.navacerrada.scaling,index.cal.navacerrada.scaling.WAMS$Index$Data)
+index.cal.navacerrada.eqm <- c(index.cal.navacerrada.eqm,index.cal.navacerrada.eqm.WAMS$Index$Data)
+index.cal.navacerrada.eqm.extrapol <- c(index.cal.navacerrada.eqm.extrapol,index.cal.navacerrada.eqm.extrapol.WAMS$Index$Data)
+index.cal.navacerrada.pqm <- c(index.cal.navacerrada.pqm,index.cal.navacerrada.pqm.WAMS$Index$Data)
+index.cal.navacerrada.gpqm <- c(index.cal.navacerrada.gpqm,index.cal.navacerrada.gpqm.WAMS$Index$Data)
+
 results.navacerrada <- data.frame(index.obs.navacerrada, index.trmm.navacerrada, index.cal.navacerrada.scaling,
                       index.cal.navacerrada.eqm,index.cal.navacerrada.eqm.extrapol, index.cal.navacerrada.pqm, index.cal.navacerrada.gpqm
                       )
@@ -1105,28 +1332,73 @@ index.obs.santiago <- valueIndex1D(obs.santiago$Data,index.codes=c("Skewness","R
 
 index.trmm.santiago <- valueIndex1D(trmm.santiago$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
+index.obs.santiago.WAMS <- valueIndex(obs.santiago, index.code = "WetAnnualMaxSpell")
+index.trmm.santiago.WAMS <- valueIndex(trmm.santiago, index.code = "WetAnnualMaxSpell")
+
 cal.santiago.scaling <- biasCorrection(y = obs.santiago, x = trmm.santiago, newdata = trmm.santiago, precipitation = TRUE, cross.val = "loo", method = "scaling", scaling.type = "multiplicative")
+
+cal.santiago.scaling$Dates$start <- as.POSIXct(cal.santiago.scaling$Dates$start,tz = "GMT")
+cal.santiago.scaling$Dates$end <- as.POSIXct(cal.santiago.scaling$Dates$end,tz = "GMT")
+
+index.cal.santiago.scaling.WAMS <- valueIndex(cal.santiago.scaling, index.code = "WetAnnualMaxSpell")
+
 
 index.cal.santiago.scaling <- valueIndex1D(cal.santiago.scaling$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.santiago.eqm <- biasCorrection(y = obs.santiago, x = trmm.santiago, newdata = trmm.santiago, precipitation = TRUE, cross.val = "loo", method = "eqm")
 
+cal.santiago.eqm$Dates$start <- as.POSIXct(cal.santiago.eqm$Dates$start,tz = "GMT")
+cal.santiago.eqm$Dates$end <- as.POSIXct(cal.santiago.eqm$Dates$end,tz = "GMT")
+
+index.cal.santiago.eqm.WAMS <- valueIndex(cal.santiago.eqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.santiago.eqm <- valueIndex1D(cal.santiago.eqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.santiago.eqm.extrapol <- biasCorrection(y = obs.santiago, x = trmm.santiago, newdata = trmm.santiago, precipitation = TRUE, cross.val = "loo", method = "eqm", extrapolation = "constant")
+
+cal.santiago.eqm.extrapol$Dates$start <- as.POSIXct(cal.santiago.eqm.extrapol$Dates$start,tz = "GMT")
+cal.santiago.eqm.extrapol$Dates$end <- as.POSIXct(cal.santiago.eqm.extrapol$Dates$end,tz = "GMT")
+
+index.cal.santiago.eqm.extrapol.WAMS <- valueIndex(cal.santiago.eqm.extrapol, index.code = "WetAnnualMaxSpell")
 
 index.cal.santiago.eqm.extrapol <- valueIndex1D(cal.santiago.eqm.extrapol$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.santiago.pqm <- biasCorrection(y = obs.santiago, x = trmm.santiago, newdata = trmm.santiago, precipitation = TRUE, cross.val = "loo", method = "pqm",  fitdistr.args = list(densfun = "gamma"))
 
+cal.santiago.pqm$Dates$start <- as.POSIXct(cal.santiago.pqm$Dates$start,tz = "GMT")
+cal.santiago.pqm$Dates$end <- as.POSIXct(cal.santiago.pqm$Dates$end,tz = "GMT")
+
+index.cal.santiago.pqm.WAMS <- valueIndex(cal.santiago.pqm, index.code = "WetAnnualMaxSpell")
+
 index.cal.santiago.pqm <- valueIndex1D(cal.santiago.pqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 
 cal.santiago.gpqm <- biasCorrection(y = obs.santiago, x = trmm.santiago, newdata = trmm.santiago, precipitation = TRUE, cross.val = "loo", method = "gpqm", theta = 0.7)
+
+cal.santiago.gpqm$Dates$start <- as.POSIXct(cal.santiago.gpqm$Dates$start,tz = "GMT")
+cal.santiago.gpqm$Dates$end <- as.POSIXct(cal.santiago.gpqm$Dates$end,tz = "GMT")
+
+index.cal.santiago.gpqm.WAMS <- valueIndex(cal.santiago.gpqm, index.code = "WetAnnualMaxSpell")
 
 index.cal.santiago.gpqm <- valueIndex1D(cal.santiago.gpqm$Data,index.codes=c("Skewness","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
 ```
 
 ```{r}
+names(index.obs.santiago.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.trmm.santiago.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.santiago.scaling.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.santiago.eqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.santiago.eqm.extrapol.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.santiago.pqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+names(index.cal.santiago.gpqm.WAMS$Index$Data) <- "WetAnnualMaxSpell"
+
+index.obs.santiago <- c(index.obs.santiago,index.obs.santiago.WAMS$Index$Data)
+index.trmm.santiago <- c(index.trmm.santiago,index.trmm.santiago.WAMS$Index$Data)
+index.cal.santiago.scaling <- c(index.cal.santiago.scaling,index.cal.santiago.scaling.WAMS$Index$Data)
+index.cal.santiago.eqm <- c(index.cal.santiago.eqm,index.cal.santiago.eqm.WAMS$Index$Data)
+index.cal.santiago.eqm.extrapol <- c(index.cal.santiago.eqm.extrapol,index.cal.santiago.eqm.extrapol.WAMS$Index$Data)
+index.cal.santiago.pqm <- c(index.cal.santiago.pqm,index.cal.santiago.pqm.WAMS$Index$Data)
+index.cal.santiago.gpqm <- c(index.cal.santiago.gpqm,index.cal.santiago.gpqm.WAMS$Index$Data)
+
 results.santiago <- data.frame(index.obs.santiago, index.trmm.santiago, index.cal.santiago.scaling,
                       index.cal.santiago.eqm,index.cal.santiago.eqm.extrapol, index.cal.santiago.pqm, index.cal.santiago.gpqm
                       )
@@ -1278,10 +1550,6 @@ points(sort(obs.santiago$Data), sort(cal.santiago.gpqm$Data), col = "blue")
 
 legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red", "blue"))
 ```
-
-
-
-
 
 
 
