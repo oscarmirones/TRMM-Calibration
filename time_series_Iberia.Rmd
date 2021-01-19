@@ -54,7 +54,7 @@ joinNewAggregation <- function(source.dir,ncml.file, dest.dir){
   lf <- grep("nc4", lf, value = TRUE)
   message("[",Sys.time(),"] Creating dataset from ", length(lf), " files")
   
-  ncfiles <- grep("nc4",list.files(source.dir), value = TRUE)
+  ncfiles <- grep("nc4",list.files(source.dir, recursive = TRUE), value = TRUE)
   
   
   z <- file(ncml.file, "w")
@@ -91,7 +91,7 @@ joinNewAggregation("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7", "inventory.ncm
 ```
 Obtaining the inventory of the data from the ncml file generated previously.
 ```{r}
-#setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
 inventory <- dataInventory("inventory.ncml")
 str(inventory)
 ```
