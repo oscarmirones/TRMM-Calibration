@@ -1545,8 +1545,8 @@ legend("topleft", legend = c("TRMM", "GPQM calibration"), pch = 1, col = c("red"
 # Merged QQplots
 
 ```{r}
-severalQQPlot <- function(obs, trmm, scaling, eqm, eqm.extrapol, pqm, gpqm){
-  qqplot(obs$Data, trmm$Data, main = "Obs,TRMM and calibration QQplot", xlab = "Observed (mm)", ylab = "TRMM/Calibration (mm)", col = "black", pch = 2, cex = .5)
+severalQQPlot <- function(obs, trmm, scaling, eqm, eqm.extrapol, pqm, gpqm, leg){
+  qqplot(obs$Data, trmm$Data, main = paste(obs$Metadata$name), xlab = "Observed (mm)", ylab = "TRMM/Calibration (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -1556,14 +1556,39 @@ points(sort(obs$Data), sort(eqm.extrapol$Data), col = "blue", pch = 19, cex = .5
 points(sort(obs$Data), sort(pqm$Data), col = "yellow", pch = 19, cex = .5)
 points(sort(obs$Data), sort(gpqm$Data), col = "grey", pch = 19, cex = .5)
 
+if(leg){
+  legend("topleft", legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"))
+}
 
-legend("topleft", legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"))
 }
 ```
 
 ```{r}
-severalQQPlot(obs.santiago,trmm.santiago,cal.santiago.scaling, cal.santiago.eqm, cal.santiago.eqm.extrapol, cal.santiago.pqm, cal.santiago.gpqm)
+severalQQPlot(obs.santiago,trmm.santiago,cal.santiago.scaling, cal.santiago.eqm, cal.santiago.eqm.extrapol, cal.santiago.pqm, cal.santiago.gpqm, leg = T)
 ```
 
+```{r}
+par(mfrow=c(2,3))
+
+
+severalQQPlot(obs.madrid,trmm.madrid,cal.madrid.scaling, cal.madrid.eqm, cal.madrid.eqm.extrapol, cal.madrid.pqm, cal.madrid.gpqm, leg = F)
+
+severalQQPlot(obs.malaga,trmm.malaga,cal.malaga.scaling, cal.malaga.eqm, cal.malaga.eqm.extrapol, cal.malaga.pqm, cal.malaga.gpqm, leg = F)
+
+severalQQPlot(obs.mallorca,trmm.mallorca,cal.mallorca.scaling, cal.mallorca.eqm, cal.mallorca.eqm.extrapol, cal.mallorca.pqm, cal.mallorca.gpqm, leg = F)
+
+severalQQPlot(obs.sansebastian,trmm.sansebastian,cal.sansebastian.scaling, cal.sansebastian.eqm, cal.sansebastian.eqm.extrapol, cal.sansebastian.pqm, cal.sansebastian.gpqm, leg = F)
+
+severalQQPlot(obs.navacerrada,trmm.navacerrada,cal.navacerrada.scaling, cal.navacerrada.eqm, cal.navacerrada.eqm.extrapol, cal.navacerrada.pqm, cal.navacerrada.gpqm, leg = F)
+
+severalQQPlot(obs.santiago,trmm.santiago,cal.santiago.scaling, cal.santiago.eqm, cal.santiago.eqm.extrapol, cal.santiago.pqm, cal.santiago.gpqm, leg = F)
+
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = 'l', bty = 'n', xaxt = 'n', yaxt = 'n')
+   
+legend(x = "bottom",
+        legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"), horiz = TRUE)
+
+```
 
 # plot asp = u
