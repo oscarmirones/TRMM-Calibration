@@ -1585,13 +1585,13 @@ abline(a = 0, b = 1)
 points(sort(obs$Data), sort(scaling$Data), col = "pink", pch = 4, cex = .5)
 points(sort(obs$Data), sort(eqm$Data), col = "red", pch = 4, cex = .5)
 points(sort(obs$Data), sort(eqm.extrapol$Data), col = "blue", pch = 19, cex = .5)
-points(sort(obs$Data), sort(pqm$Data), col = "yellow", pch = 19, cex = .5)
-points(sort(obs$Data), sort(gpqm$Data), col = "grey", pch = 19, cex = .5)
+points(sort(obs$Data), sort(pqm$Data), col = "gold", pch = 19, cex = .5)
+points(sort(obs$Data), sort(gpqm$Data), col = "forestgreen", pch = 19, cex = .5)
 
 grid() 
 
 if(leg){
-  legend("topleft", legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"))
+  legend("topleft", legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","gold","forestgreen"))
 }
 
 }
