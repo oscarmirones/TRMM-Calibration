@@ -1625,7 +1625,7 @@ par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
 plot(0, 0, type = 'l', bty = 'n', xaxt = 'n', yaxt = 'n')
    
 legend(x = "bottom",
-        legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"), horiz = TRUE)
+        legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","gold","forestgreen"), horiz = TRUE)
 
 ```
 
