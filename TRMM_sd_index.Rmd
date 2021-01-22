@@ -205,6 +205,8 @@ results.madrid <- data.frame(index.obs.madrid, index.trmm.madrid, index.cal.madr
                       )
 colnames(results.madrid) <- c("Obs","TRMM","Scaling_cal", "EQM_cal","EQM_cal.Extrapol", "PQM_cal","GPQM_cal")
 
+format(results.madrid, digits = 3, scientific = 5)
+
 results.madrid
 ```
 Also, the difference in absolute value between observational data and calibration data is presented in another dataframe. TRMM differences are also included.
@@ -214,6 +216,8 @@ Also, the difference in absolute value between observational data and calibratio
                       )
 colnames(diff.madrid) <- c("TRMM","Scaling_cal", "EQM_cal","EQM_cal.Extrapol", "PQM_cal.","GPQM_cal")
 
+format(diff.madrid, digits = 3, scientific = 5)
+
 diff.madrid
 ```
 If we want to know, where the observations are overestimated or underestimated, with the next table we can clearly check it. Blue designates underestimation, while red designates overestimation.
@@ -222,7 +226,7 @@ If we want to know, where the observations are overestimated or underestimated, 
                       index.cal.madrid.eqm-index.obs.madrid, index.cal.madrid.eqm.extrapol-index.obs.madrid, index.cal.madrid.pqm-index.obs.madrid, index.cal.madrid.gpqm-index.obs.madrid)
 colnames(diff.madrid.noabs) <- c("TRMM","Scaling_cal", "EQM_cal","EQM_cal.Extrapol", "PQM_cal","GPQM_cal")
 
-diff.madrid.noabs
+#options("scipen"=100, "digits"=4)
 
 formattable(diff.madrid.noabs, list(
   'TRMM' = formatter("span", 
@@ -257,7 +261,10 @@ formattable(diff.madrid.noabs, list(
                                                   ifelse(GPQM_cal == 0,"black",
                                                          ifelse(GPQM_cal <0, "blue",NA)))))
  ))
+
+
 ```
+
 
 Finally, the density functions and QQPlots for observational data, TRMM and each correction method is computed. This comparison can help visually to check the effect of the correction of the satellite data.
 
@@ -457,6 +464,8 @@ results.malaga <- data.frame(index.obs.malaga, index.trmm.malaga, index.cal.mala
 
 colnames(results.malaga) <- c("Obs","TRMM","Scaling cal.", "EQM cal.", "EQM extrapol cal.","PQM cal.","GPQM cal.")
 
+results.malaga <- format(results.malaga, digits = 3, scientific = 5)
+
 results.malaga
 ```
 ```{r}
@@ -464,6 +473,8 @@ results.malaga
                       abs(index.cal.malaga.eqm-index.obs.malaga),abs(index.cal.malaga.eqm.extrapol-index.obs.malaga), abs(index.cal.malaga.pqm-index.obs.malaga), abs(index.cal.malaga.gpqm-index.obs.malaga)
                       )
 colnames(diff.malaga) <- c("TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+diff.malaga <- format(diff.malaga, digits = 3, scientific = 5)
 
 diff.malaga
 ```
@@ -691,6 +702,9 @@ results.mallorca <- data.frame(index.obs.mallorca, index.trmm.mallorca,index.cal
                       index.cal.mallorca.eqm, index.cal.mallorca.eqm.extrapol ,index.cal.mallorca.pqm, index.cal.mallorca.gpqm
                       )
 colnames(results.mallorca) <- c("Obs","TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal", "PQM cal.","GPQM cal.")
+
+results.mallorca <- format(results.mallorca, digits = 3, scientific = 5)
+
 results.mallorca
 ```
 ```{r}
@@ -698,6 +712,9 @@ results.mallorca
                       abs(index.cal.mallorca.eqm-index.obs.mallorca),abs(index.cal.mallorca.eqm.extrapol-index.obs.mallorca), abs(index.cal.mallorca.pqm-index.obs.mallorca), abs(index.cal.mallorca.gpqm-index.obs.mallorca)
                       )
 colnames(diff.mallorca) <- c("TRMM","Scaling cal.", "EQM cal.", "EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+diff.mallorca <- format(diff.mallorca, digits = 3, scientific = 5)
+
 
 diff.mallorca
 ```
@@ -932,6 +949,9 @@ results.sansebastian <- data.frame(index.obs.sansebastian, index.trmm.sansebasti
                       index.cal.sansebastian.eqm,index.cal.sansebastian.eqm.extrapol, index.cal.sansebastian.pqm, index.cal.sansebastian.gpqm
                       )
 colnames(results.sansebastian) <- c("Obs","TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+results.sansebastian <- format(results.sansebastian, digits = 3, scientific = 5)
+
 results.sansebastian
 
 ```
@@ -941,6 +961,8 @@ results.sansebastian
                       abs(index.cal.sansebastian.eqm-index.obs.sansebastian),abs(index.cal.sansebastian.eqm.extrapol-index.obs.sansebastian), abs(index.cal.sansebastian.pqm-index.obs.sansebastian), abs(index.cal.sansebastian.gpqm-index.obs.sansebastian)
                       )
 colnames(diff.sansebastian) <- c("TRMM","Scaling cal.", "EQM cal.", "EQM extrapol cal.","PQM cal.","GPQM cal.")
+
+diff.sansebastian <- format(diff.sansebastian, digits = 3, scientific = 5)
 
 diff.sansebastian
 ```
@@ -1166,6 +1188,9 @@ results.navacerrada <- data.frame(index.obs.navacerrada, index.trmm.navacerrada,
                       index.cal.navacerrada.eqm,index.cal.navacerrada.eqm.extrapol, index.cal.navacerrada.pqm, index.cal.navacerrada.gpqm
                       )
 colnames(results.navacerrada) <- c("Obs","TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+results.navacerrada <- format(results.navacerrada, digits = 3, scientific = 5)
+
 results.navacerrada
 
 ```
@@ -1175,6 +1200,8 @@ results.navacerrada
                       abs(index.cal.navacerrada.eqm-index.obs.navacerrada),abs(index.cal.navacerrada.eqm.extrapol-index.obs.navacerrada), abs(index.cal.navacerrada.pqm-index.obs.navacerrada), abs(index.cal.navacerrada.gpqm-index.obs.navacerrada)
                       )
 colnames(diff.navacerrada) <- c("TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+diff.navacerrada <- format(diff.navacerrada, digits = 3, scientific = 5)
 
 diff.navacerrada
 ```
@@ -1395,6 +1422,9 @@ results.santiago <- data.frame(index.obs.santiago, index.trmm.santiago, index.ca
                       index.cal.santiago.eqm,index.cal.santiago.eqm.extrapol, index.cal.santiago.pqm, index.cal.santiago.gpqm
                       )
 colnames(results.santiago) <- c("Obs","TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+results.santiago <- format(results.santiago, digits = 3, scientific = 5)
+
 results.santiago
 
 ```
@@ -1404,6 +1434,8 @@ results.santiago
                       abs(index.cal.santiago.eqm-index.obs.santiago),abs(index.cal.santiago.eqm.extrapol-index.obs.santiago), abs(index.cal.santiago.pqm-index.obs.santiago), abs(index.cal.santiago.gpqm-index.obs.santiago)
                       )
 colnames(diff.santiago) <- c("TRMM","Scaling cal.", "EQM cal.","EQM extrapol cal.", "PQM cal.","GPQM cal.")
+
+diff.santiago <- format(diff.santiago, digits = 3, scientific = 5)
 
 diff.santiago
 ```
@@ -1556,6 +1588,8 @@ points(sort(obs$Data), sort(eqm.extrapol$Data), col = "blue", pch = 19, cex = .5
 points(sort(obs$Data), sort(pqm$Data), col = "yellow", pch = 19, cex = .5)
 points(sort(obs$Data), sort(gpqm$Data), col = "grey", pch = 19, cex = .5)
 
+grid() 
+
 if(leg){
   legend("topleft", legend = c("TRMM","Scaling","EQM", "EQM extrapol", "PQM","GPQM"), pch = c(2,4,4,19,19,19), col = c("black", "pink","red","blue","yellow","grey"))
 }
@@ -1568,7 +1602,8 @@ severalQQPlot(obs.santiago,trmm.santiago,cal.santiago.scaling, cal.santiago.eqm,
 ```
 
 ```{r}
-par(mfrow=c(2,3))
+
+par(oma = c(3.7,1,1,1), mfrow = c(2, 3), mar = c(2, 2, 1, 1))
 
 
 severalQQPlot(obs.madrid,trmm.madrid,cal.madrid.scaling, cal.madrid.eqm, cal.madrid.eqm.extrapol, cal.madrid.pqm, cal.madrid.gpqm, leg = F)
@@ -1583,6 +1618,9 @@ severalQQPlot(obs.navacerrada,trmm.navacerrada,cal.navacerrada.scaling, cal.nava
 
 severalQQPlot(obs.santiago,trmm.santiago,cal.santiago.scaling, cal.santiago.eqm, cal.santiago.eqm.extrapol, cal.santiago.pqm, cal.santiago.gpqm, leg = F)
 
+mtext("Observed(mm)",side=1,line=0,outer=TRUE,cex=0.7)
+mtext("TRMM/Calibration(mm)",side=2,line=0,outer=TRUE,cex=0.7,las=0)
+
 par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
 plot(0, 0, type = 'l', bty = 'n', xaxt = 'n', yaxt = 'n')
    
@@ -1591,4 +1629,3 @@ legend(x = "bottom",
 
 ```
 
-# plot asp = u
