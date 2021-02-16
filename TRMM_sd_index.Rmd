@@ -67,7 +67,8 @@ The next function provides us to calculute the 13 year maximum return value. Sin
 ```{r}
 MaxReturnValue <- function(data){
   #library(lubridate)
-  nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  #nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  nyears <- 20
   data.maxYear <- aggregateGrid(redim(data), aggr.y = list(FUN = "max",na.rm = TRUE))
 
   data.maxrv <- climatology(data, clim.fun = list(FUN = "mean", na.rm = T))

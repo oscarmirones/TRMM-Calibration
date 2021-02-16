@@ -186,5 +186,42 @@ temporalPlot(trmm.station,obs.station,
                                     ylab = "mm"))
 ```
 
-
+```{r}
+joinNewAggregationFromLinkList <- function(link.list,ncml.file, dest.dir){
+  setwd(dest.dir)
+  
+  #list files from directory
+  lf <- readLines(link.list)
+  lf <- grep("nc4", lf, value = TRUE)
+  message("[",Sys.time(),"] Creating dataset from ", length(lf), " files")
+  
+  #ncfiles <- grep("nc4",list.files(source.dir, recursive = TRUE), value = TRUE)
+  ncfiles <- lf
+  
+  z <- file(ncml.file, "w")
+  cat("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", file = z)
+  cat(c("\n","<netcdf xmlns=\"http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2\">"), sep = "", file = z)
+  cat(c("\n","\t","<dimension name=\"time\" length =","\"",paste(length(lf)) ,"\"", " isUnlimited=","\"",paste("false"), "\"/>"), sep = "", file = z)
+  cat(c("\n","\t","<variable name=\"time\" shape=\"time\" type=\"int\" >"), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"long_name\" value=\"Day of a natural year\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"standard_name\" value=\"time\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"units\" value=","\"",paste("days since",as.Date(strsplit(ncfiles[1],"[.]")[[1]][7], format = "%Y%m%d")-1),"\"/>"), sep = "", file = z)
+  cat(c("\n","\t","\t","<attribute name=\"_CoordinateAxisType\" value=\"Time\"/> "), sep = "", file = z)
+  cat(c("\n","\t","\t","<values>",seq(1,length(lf)), "</values>"), file = z)
+  cat(c("\n","\t","</variable>"), sep = "", file = z)
+  cat(c("\n","\t","<aggregation dimName=\"time\" type=\"joinNew\">"), sep = "", file = z)
+  cat(c("\n","\t","\t","<variableAgg name=\"precipitation\" />"), sep = "", file = z)
+  for (i in 1:length(lf)) {
+    cat(c("\n","\t","\t","<netcdf location=", "\"", lf[i]), "\"/>", sep = "", file = z)
+  }
+  
+  cat(c("\n","\t","</aggregation>"), sep = "", file = z)
+  cat(c("\n","</netcdf>"), sep = "", file = z)
+  
+  message("[",Sys.time(),"] NCML file created in ", source.dir)
+  
+  close(z)
+  
+}
+```
 

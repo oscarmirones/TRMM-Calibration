@@ -1,0 +1,633 @@
+---
+title: "WT ANALYSIS"
+output: html_notebook
+---
+
+
+```{r eval=TRUE, message=FALSE}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(ncdf4)
+```
+
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7")
+inventory <- dataInventory("inventory.ncml")
+```
+
+```{r}
+trmm160.180 <- loadGridData(dataset = "C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7/inventory.ncml",
+             var = "precipitation",
+             lonLim = c(160,180),
+             latLim = c(-30,0) ,
+             years = 1998:2019)
+
+```
+```{r}
+trmm180.210 <- loadGridData(dataset = "C:/Users/usuario/Desktop/TRMM_3B42_Daily_V7/inventory.ncml",
+             var = "precipitation",
+             lonLim = c(-180.0,-150),
+             latLim = c(-30,0) ,
+             years = 1998:2019)
+
+```
+
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM-Calibration/Data")
+sites <- read.csv('sites.txt')
+```
+
+```{r}
+sites
+```
+Sites metadata (extracted from https://pacrain.ou.edu/data_format.html):
+
+## Site Data
+
+Information about all sites which match your query parameters is in the file 'sites*.txt', where the wildcard (*) indicates a unique identifier for your particular query. Each record in this file contains the following fields:
+site identifer
+This uniquely identifies the site. The first two characters indicate the data source for the site.
+
+- FR French Polynesian Meteorological Service
+- NZ National Institude for Water and Atmospheric Recearch, New Zealand
+- SP Schools of the Pacific Rainfall Climate Experiment
+- TA Taylor's An Atlas of Pacific Islands Rainfall
+- US National Climatic Data Center, United States
+
+## latitude
+
+This is the latitude in decimal degrees; negative latitudes are in the Southern Hemisphere.
+
+## longitude
+
+This is the longitude in decimal degrees; negative longitudes are in the Western Hemisphere.
+
+## elevation
+
+This is the site elevation in meters.
+
+## terrain type
+
+This is the terrain classfication, as decribed below.
+
+- 0 atoll
+- 1 coastal
+- 2 coastal with orographic influence
+- 3 inland
+- 4 inland with orographic influence
+- 5 unspecified
+- 6 oceaninc (oceanographic buoy)
+
+## time zone
+
+This is the time zone in hours from UTC.
+
+## flags
+
+This is the sum of all data flags valid for this site. Flags have the following meanings:
+
+- 1 restricted access
+- 2 there are one or more footnotes for this record
+- 4 the location of this site is approximate
+
+## record identifier
+
+This uniquely identifies the site record.
+
+## record timestamp
+
+This is the date and time (UTC) when the site record was either last modified or added to the database.
+
+
+```{r}
+#Filter sites data
+paste("Latitude:",min(sites$latitude),",", max(sites$latitude))
+paste("Longitude:",max(sites$longitude),",", max(sites$longitude))
+```
+```{r}
+latitude.mask <- which(sites$latitude <= 0 & sites$latitude >= -30)
+longitude.mask.g160 <- which(sites$longitude >= 160)
+longitude.mask.lm150 <- which(sites$longitude <= -150)
+longitude.mask <- sort(unique(c(longitude.mask.g160, longitude.mask.lm150)))
+mask <- intersect(latitude.mask, longitude.mask)
+sites <- sites[mask,]
+```
+
+```{r}
+sites
+```
+
+
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM-Calibration/Data")
+wt <- nc_open("xds_kma_bmus.nc")
+```
+
+```{r}
+wt.bmus <- ncvar_get(wt, "bmus") #each output corresponds to a date
+#wt.lat <- ncvar_get(wt, "lat", verbose = F)
+#wt.lon <- ncvar_get(wt, "lon")
+wt.t <- seq(as.Date("1982/01/01"), by = "day", length.out = length(wt.bmus))
+```
+
+```{r}
+bmus.df<- data.frame(wt.t, wt.bmus)
+colnames(bmus.df) <- c("Date", "WT")
+```
+
+
+```{r}
+bmus.df
+```
+```{r}
+#df exported as csv
+
+#write.csv(bmus.df,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/bmus.csv")
+```
+
+```{r}
+#filter by date
+bmus.df <- bmus.df[which(bmus.df$Date >= as.Date("1998/01/01")),]
+bmus.df
+#some WT, as WT=10, do not appear in this time series
+```
+```{r}
+sort(unique(bmus.df$WT))
+```
+```{r}
+setdiff(c(0:48),unique(bmus.df$WT))
+#this WT does not appear since 1998
+```
+
+
+
+```{r}
+#WT 0
+bmus.0 <- bmus.df[which(bmus.df$WT == 0),]
+bmus.0
+```
+
+```{r}
+match(bmus.0$Date,as.Date(trmm160.180$Dates$start)) #equiv with trmm180.210
+#The indices of matching dates in trmm. Neccessary to calculate pp mean and p95 of pp
+
+trmm160.180$Data[match(bmus.0$Date,as.Date(trmm160.180$Dates$start)),,]
+#corresponding pp to the dates where WT = 0. Lat 0,-30 and Long 160,180
+
+trmm180.210$Data[match(bmus.0$Date,as.Date(trmm180.210$Dates$start)),,]
+#same but with longitude 180, 210
+
+```
+
+Example of computation of mean precipitation and 95th percentile for WT 0
+```{r}
+pp.WT0 <- c(trmm160.180$Data[match(bmus.0$Date,as.Date(trmm160.180$Dates$start)),,],trmm180.210$Data[match(bmus.0$Date,as.Date(trmm180.210$Dates$start)),,])
+
+mean.pp.WT0 <- mean(pp.WT0)
+p95.pp.WT0 <- quantile(pp.WT0, .95)
+
+paste("Mean WT0:",mean.pp.WT0, "Percentile 95 WT0:", p95.pp.WT0)
+```
+Generalization of each WT mean pp and 95th percentile computation
+
+```{r}
+mean.vector <- c()
+p95.vector <- c()
+counts <- c()
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df$WT)))) {
+    aux <- bmus.df[which(bmus.df$WT == i),]
+  
+    c <- length(bmus.df[which(bmus.df$WT == i),]$Date)
+  
+    pp.WT <-  c(trmm160.180$Data[match(aux$Date,as.Date(trmm160.180$Dates$start)),,],trmm180.210$Data[match(aux$Date,as.Date(trmm180.210$Dates$start)),,])
+  
+    mean.WT <- mean(pp.WT)
+    p95.WT <- quantile(pp.WT, .95)
+  
+    mean.vector <- c(mean.vector, mean.WT)
+    p95.vector <- c(p95.vector, p95.WT)
+    counts <- c(counts, c)
+  }else{
+    mean.vector <- c(mean.vector, NA)
+    p95.vector <- c(p95.vector, NA)
+    counts <- c(counts, 0)
+  }
+}
+```
+
+```{r}
+WT.df<- data.frame(c(0:49),mean.vector, p95.vector, counts)
+colnames(WT.df) <- c("WT", "Mean_pp", "Percentile_95", "Number_of_Days")
+WT.df
+```
+
+```{r}
+write.csv(WT.df,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/WT_pp_analysis.csv")
+```
+
+```{r}
+barplot(WT.df$Mean_pp ~ WT.df$WT, main = "WT Mean Precipitation", xlab = "WT", ylab = "Mean pp (mm)", col = "blue", na.action = na.pass)
+```
+
+```{r}
+barplot(WT.df$Percentile_95 ~ WT.df$WT, main = "WT Percentile 95", xlab = "WT", ylab = "P95 pp (mm)", col = "blue", na.action = na.pass)
+```
+
+
+```{r}
+barplot(WT.df$Mean_pp ~ WT.df$WT, main = "WT Mean Precipitation", xlab = "WT", ylab = "Mean pp (mm)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+
+```
+```{r}
+barplot(WT.df$Percentile_95 ~ WT.df$WT, main = "WT Percentile 95", xlab = "WT", ylab = "P95 pp (mm)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+```
+```{r}
+barplot(WT.df$Mean_pp ~ WT.df$WT, main = "WT Mean Precipitation", xlab = "WT", ylab = "Mean pp (mm)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 5,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 5% of total days", ">= 5% of total days"),  col = c("red", "blue"), pch = c(15,15))
+
+```
+
+```{r}
+barplot(WT.df$Percentile_95 ~ WT.df$WT, main = "WT Percentile 95", xlab = "WT", ylab = "P95 pp (mm)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 5,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 5% of total days", ">= 5% of total days"),  col = c("red", "blue"), pch = c(15,15))
+```
+
+```{r}
+trmm <- bindGrid(trmm160.180, trmm180.210,dimension = "lon")
+```
+
+```{r}
+mean.vector <- c()
+p95.vector <- c()
+counts <- c()
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df$WT)))) {
+    aux <- bmus.df[which(bmus.df$WT == i),]
+  
+    c <- length(bmus.df[which(bmus.df$WT == i),]$Date)
+  
+    pp.WT <-  trmm$Data[,,match(aux$Date,as.Date(trmm$Dates$start)),,]
+  
+    mean.WT <- mean(pp.WT)
+    p95.WT <- quantile(pp.WT, .95)
+  
+    mean.vector <- c(mean.vector, mean.WT)
+    p95.vector <- c(p95.vector, p95.WT)
+    counts <- c(counts, c)
+  }else{
+    mean.vector <- c(mean.vector, NA)
+    p95.vector <- c(p95.vector, NA)
+    counts <- c(counts, 0)
+  }
+}
+```
+
+```{r}
+data.frame(c(0:49),mean.vector, p95.vector, counts)
+```
+
+calculate R01 index, Relative frequency of wet days (precip >= 1mm)
+```{r}
+library(climate4R.value)
+
+```
+
+```{r}
+mean.vector <- c()
+p95.vector <- c()
+counts <- c()
+wetdays <- c()
+p98wet.vector <- c()
+p98wetAmount.vector <- c()
+
+
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df$WT)))) {
+    aux <- bmus.df[which(bmus.df$WT == i),]
+  
+    c <- length(bmus.df[which(bmus.df$WT == i),]$Date)
+  
+    pp.WT <-  trmm$Data[,,match(aux$Date,as.Date(trmm$Dates$start)),,]
+  
+    mean.WT <- mean(pp.WT)
+    p95.WT <- quantile(pp.WT, .95)
+    rf.wetdays.WT <- valueIndex1D(pp.WT,index.codes="R01")
+    p98wet <- valueIndex1D(pp.WT,index.codes="P98Wet")
+    p98wetAmount <- valueIndex1D(pp.WT,index.codes="P98WetAmount")
+    
+  
+    mean.vector <- c(mean.vector, mean.WT)
+    p95.vector <- c(p95.vector, p95.WT)
+    counts <- c(counts, c)
+    wetdays <- c(wetdays, rf.wetdays.WT)
+    p98wet.vector <- c(p98wet.vector,p98wet)
+    p98wetAmount.vector <- c(p98wetAmount.vector,p98wetAmount)
+    ppdays <- c(ppdays,rf.pp.WT)
+  }else{
+    mean.vector <- c(mean.vector, NA)
+    p95.vector <- c(p95.vector, NA)
+    counts <- c(counts, 0)
+    wetdays <- c(wetdays, NA)
+    p98wet.vector <- c(p98wet.vector, NA)
+    p98wetAmount.vector <- c(p98wetAmount.vector, NA)
+    
+  }
+}
+```
+R01 is the relative frequency of wet days (precip >= 1mm)
+
+```{r}
+WT.df <- data.frame(c(0:49),mean.vector, p95.vector, counts, wetdays, p98wet.vector, p98wetAmount.vector)
+colnames(WT.df) <- c("WT", "Mean_pp", "Percentile_95", "Number_of_Days", "R01", "P98Wet", "P98WetAmount")
+WT.df
+```
+```{r}
+barplot(WT.df$P98Wet ~ WT.df$WT, main = "WT P98wet", xlab = "WT", ylab = "P98Wet pp (mm)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+
+```
+
+```{r}
+barplot((WT.df$P98WetAmount/WT.df$Number_of_Days) ~ WT.df$WT, main = "WT P98wetAmount per Day", xlab = "WT", ylab = "P98WetAmount pp (mm/day)", col = ifelse((WT.df$Number_of_Days)/sum(WT.df$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+
+```
+
+
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM-Calibration/Data/W5E5_slp")
+
+psl1997.2000 <- bindGrid(loadGridData("psl_W5E5v1.0_19910101-20001231.nc", 
+                             var = "psl",
+                             years = 1997:2000,
+                             latLim = c(-30,0),
+                             lonLim = c(160,180)),
+                         loadGridData("psl_W5E5v1.0_19910101-20001231.nc", 
+                             var = "psl",
+                             years = 1997:2000,
+                             latLim = c(-30,0),
+                             lonLim = c(-180,-150)), dimension = "lon")
+```
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM-Calibration/Data/W5E5_slp")
+
+psl2001.2010 <- bindGrid(loadGridData("psl_W5E5v1.0_20010101-20101231.nc", 
+                             var = "psl",
+                             years = 2001:2010,
+                             latLim = c(-30,0),
+                             lonLim = c(160,180)),
+                         loadGridData("psl_W5E5v1.0_20010101-20101231.nc", 
+                             var = "psl",
+                             years = 2001:2010,
+                             latLim = c(-30,0),
+                             lonLim = c(-180,-150)), dimension = "lon")
+
+psl2011.2016 <- bindGrid(loadGridData("psl_W5E5v1.0_20110101-20161231.nc", 
+                             var = "psl",
+                             years = 2011:2016,
+                             latLim = c(-30,0),
+                             lonLim = c(160,180)),
+                         loadGridData("psl_W5E5v1.0_20110101-20161231.nc", 
+                             var = "psl",
+                             years = 2011:2016,
+                             latLim = c(-30,0),
+                             lonLim = c(-180,-150)), dimension = "lon")
+
+psl1997.2016 <- bindGrid(psl1997.2000, psl2001.2010, psl2011.2016, dimension = "time")
+```
+
+```{r}
+psl.vector <- c()
+
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df$WT)))) {
+    aux <- bmus.df[which(bmus.df$WT == i),]
+
+    psl.WT <-  psl1997.2016$Data[match(aux$Date,as.Date(psl1997.2016$Dates$start)),,]
+  
+    mean.psl <- mean(psl.WT)
+    
+    psl.vector <- c(psl.vector, mean.psl)
+    
+  }else{
+    psl.vector <- c(psl.vector, NA)
+  }
+}
+```
+
+```{r}
+mean.vector <- c()
+p95.vector <- c()
+counts <- c()
+wetdays <- c()
+p98wet.vector <- c()
+p98wetAmount.vector <- c()
+psl.vector <- c()
+trmm2016 <- subsetYears(trmm, years = c(1998:2016))
+psl2016 <- subsetYears(psl1997.2016, years = c(1998:2016))
+bmus.df.2016 <- bmus.df[which(bmus.df$Date < as.Date("2017/01/01")),]
+
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df.2016$WT)))) {
+    aux <- bmus.df.2016[which(bmus.df.2016$WT == i),]
+  
+    c <- length(bmus.df[which(bmus.df.2016$WT == i),]$Date)
+  
+  
+    pp.WT <-  trmm2016$Data[,,match(aux$Date,as.Date(trmm2016$Dates$start)),,]
+    psl.WT <-  psl2016$Data[match(aux$Date,as.Date(psl2016$Dates$start)),,]
+  
+    mean.WT <- mean(pp.WT, na.rm = TRUE)
+    mean.psl <- mean(psl.WT, na.rm = TRUE)
+    p95.WT <- quantile(pp.WT, .95, na.rm = TRUE)
+    rf.wetdays.WT <- valueIndex1D(pp.WT,index.codes="R01")
+    p98wet <- valueIndex1D(pp.WT,index.codes="P98Wet")
+    p98wetAmount <- valueIndex1D(pp.WT,index.codes="P98WetAmount")
+    psl.vector <- c(psl.vector, mean.psl)
+    
+    mean.vector <- c(mean.vector, mean.WT)
+    p95.vector <- c(p95.vector, p95.WT)
+    counts <- c(counts, c)
+    wetdays <- c(wetdays, rf.wetdays.WT)
+    p98wet.vector <- c(p98wet.vector,p98wet)
+    p98wetAmount.vector <- c(p98wetAmount.vector,p98wetAmount)
+  }else{
+    mean.vector <- c(mean.vector, NA)
+    p95.vector <- c(p95.vector, NA)
+    counts <- c(counts, 0)
+    wetdays <- c(wetdays, NA)
+    p98wet.vector <- c(p98wet.vector, NA)
+    p98wetAmount.vector <- c(p98wetAmount.vector, NA)
+    psl.vector <- c(psl.vector, NA)
+  }
+}
+```
+
+
+```{r}
+WT.df.2016 <- data.frame(c(0:49),mean.vector, p95.vector, psl.vector, counts, wetdays, p98wet.vector, p98wetAmount.vector)
+colnames(WT.df.2016) <- c("WT", "Mean_pp", "Percentile_95","SLP", "Number_of_Days", "R01", "P98Wet", "P98WetAmount")
+WT.df.2016
+```
+
+```{r}
+barplot(WT.df.2016$SLP ~ WT.df.2016$WT, main = "WT SLP", xlab = "WT", ylab = "SLP (Pa)", ylim = c(min(WT.df.2016$SLP, na.rm = TRUE),max(WT.df.2016$SLP, na.rm = TRUE)),col = ifelse((WT.df.2016$Number_of_Days)/sum(WT.df.2016$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass, xpd = FALSE)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+```
+```{r}
+diff.psl <- c()
+WT.day <- c()
+WT.value <- c()
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df.2016$WT)))) {
+    aux <- bmus.df.2016[which(bmus.df.2016$WT == i),]
+  
+    psl.WT <-  psl1997.2016$Data[match(aux$Date,as.Date(psl1997.2016$Dates$start)),,]
+    psl.WT.days <- psl1997.2016$Dates$start[match(aux$Date,as.Date(psl1997.2016$Dates$start))]
+    psl.WT.previous <-  psl1997.2016$Data[match(aux$Date,as.Date(psl1997.2016$Dates$start))-1,,]
+    
+    aux.psl <- c()
+    
+    if (length(dim(psl.WT)) > 2) {
+      iter <- dim(psl.WT)[1]
+    }else{
+      iter <- 1 
+    }
+    for (j in c(1:iter)) {
+      if (iter > 1) {
+        aux.mean <- mean(psl.WT[j,,])
+        aux.mean.previous <- mean(psl.WT.previous[j,,])
+        aux.psl <- c(aux.psl, aux.mean-aux.mean.previous)
+      }else{
+        aux.mean <- mean(psl.WT)
+        aux.mean.previous <- mean(psl.WT.previous)
+        aux.psl <- c(aux.psl, aux.mean-aux.mean.previous)
+      }
+      
+    }
+    WT.value <- c(WT.value,rep(i,j)) #repeat WT j times
+    WT.day <- c(WT.day,psl.WT.days)
+    diff.psl <- c(diff.psl, aux.psl)
+  }else{
+    diff.psl <- c(diff.psl, NA)
+    WT.value <- c(WT.value, i)
+    WT.day <- c(WT.day, NA)
+  }
+}
+```
+
+```{r}
+WT.diff.psl <- data.frame(WT.value, as.Date(WT.day, format = "%Y-%m-%d"), diff.psl)
+colnames(WT.diff.psl) <- c("WT", "Date", "Diff_PSL")
+WT.diff.psl
+```
+```{r}
+psl.max.diff <- c()
+psl.min.diff <- c()
+
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df.2016$WT)))) {
+    psl.max.diff <- c(psl.max.diff, max(WT.diff.psl[which(WT.diff.psl$WT==i),,]$Diff_PSL))
+    psl.min.diff <- c(psl.min.diff, min(WT.diff.psl[which(WT.diff.psl$WT==i),,]$Diff_PSL))
+   
+  }else{
+    psl.max.diff <- c(psl.max.diff, NA)
+    psl.min.diff <- c(psl.min.diff, NA)
+  }
+  
+}
+
+
+```
+
+```{r}
+barplot(psl.max.diff ~ c(0:49), main = "WT SLP Max Diff", xlab = "WT", ylab = "SLP (Pa)", col = 'blue')
+```
+```{r}
+barplot(psl.min.diff ~ c(0:49), main = "WT SLP Min Diff", xlab = "WT", ylab = "SLP (Pa)", col = 'blue')
+```
+
+
+
+```{r}
+#write.csv(WT.diff.psl,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/WT_diff_psl.csv")
+```
+
+```{r}
+psl.abs.diff <- c()
+
+for (i in c(0:49)) {
+  if (is.element(i,sort(unique(bmus.df.2016$WT)))) {
+    psl.abs.diff <- c(psl.abs.diff, mean(abs(WT.diff.psl[which(WT.diff.psl$WT==i),,]$Diff_PSL)))
+  }else{
+    psl.abs.diff <- c(psl.abs.diff, NA)
+  }
+  
+}
+```
+
+
+```{r}
+WT.df.2016 <- data.frame(c(0:49),mean.vector, p95.vector, psl.vector, psl.abs.diff, counts, wetdays, p98wet.vector, p98wetAmount.vector)
+colnames(WT.df.2016) <- c("WT", "Mean_pp", "Percentile_95","SLP","SLP_Mean_Diff", "Number_of_Days", "R01", "P98Wet", "P98WetAmount")
+WT.df.2016
+```
+
+```{r}
+barplot(WT.df.2016$SLP_Mean_Diff ~ WT.df.2016$WT, main = "WT SLP Mean Diff", xlab = "WT", ylab = "SLP (Pa)", ylim = c(min(WT.df.2016$SLP_Mean_Diff, na.rm = TRUE),max(WT.df.2016$SLP_Mean_Diff, na.rm = TRUE)),col = ifelse((WT.df.2016$Number_of_Days)/sum(WT.df.2016$Number_of_Days)*100 < 1,"red","blue"), na.action = na.pass, xpd = FALSE)
+legend("topright", legend = c("< 1% of total days", ">= 1% of total days"),  col = c("red", "blue"), pch = c(15,15))
+```
+
+```{r}
+write.csv(WT.df.2016,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/WT_1998_2016.csv")
+```
+
+
+
+
+
+```{r}
+
+totWithinss <- c(1:15)
+for(i in 1:15){
+  kmModel<- kmeans(na.omit(WT.df.2016[,c(2,3,4,7)]), centers = i, nstart = 1)
+  totWithinss[i]<- kmModel$tot.withinss
+}
+plot(x=1:15,y=totWithinss,type="b", xlab="N. Of Cluster",ylab="Within groups sum of squares")
+```
+
+```{r}
+kmModel <- kmeans(na.omit(WT.df.2016[,c(2,3,4,7)]), centers = 7)
+summary(kmModel)
+```
+
+```{r}
+plot(na.omit(WT.df.2016[,c(2,4)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.df.2016[,c(2,4)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(1,3)],col=1:7,pch=8,cex=2.5)
+
+```
+
+```{r}
+plot(na.omit(WT.df.2016[,c(3,4)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.df.2016[,c(3,4)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(2,3)],col=1:7,pch=8,cex=2.5)
+
+```
+```{r}
+plot(na.omit(WT.df.2016[,c(2,7)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.df.2016[,c(2,7)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(1,4)],col=1:7,pch=8,cex=2.5)
+
+```
+```{r}
+plot(na.omit(WT.df.2016[,c(2,3,4,7)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.df.2016[,c(2,3,4,7)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers,col=1:7,pch=8,cex=2.5)
+```
+
