@@ -630,4 +630,49 @@ plot(na.omit(WT.df.2016[,c(2,3,4,7)]),col=kmModel$cluster,main="KMeans", pch = 1
 text(na.omit(WT.df.2016[,c(2,3,4,7)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
 points(kmModel$centers,col=1:7,pch=8,cex=2.5)
 ```
+```{r}
+WT.scaled <- scale(WT.df.2016[,-1])
+```
 
+
+```{r}
+
+totWithinss <- c(1:15)
+for(i in 1:15){
+  kmModel<- kmeans(na.omit(WT.scaled[,c(1,2,3,6)]), centers = i, nstart = 1)
+  totWithinss[i]<- kmModel$tot.withinss
+}
+plot(x=1:15,y=totWithinss,type="b", xlab="N. Of Cluster",ylab="Within groups sum of squares")
+```
+
+```{r}
+kmModel <- kmeans(na.omit(WT.scaled[,c(1,2,3,6)]), centers = 7)
+summary(kmModel)
+```
+
+```{r}
+plot(na.omit(WT.scaled[,c(1,3)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.scaled[,c(1,3)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(1,3)],col=1:8,pch=8,cex=2.5)
+
+```
+
+```{r}
+plot(na.omit(WT.scaled[,c(2,3)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.scaled[,c(2,3)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(2,3)],col=1:7,pch=8,cex=2.5)
+
+```
+```{r}
+plot(na.omit(WT.scaled[,c(1,6)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.scaled[,c(1,6)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers[,c(1,4)],col=1:7,pch=8,cex=2.5)
+
+```
+```{r}
+WT.scaled <- as.data.frame(WT.scaled)
+
+plot(na.omit(WT.scaled[,c(1,2,3,6)]),col=kmModel$cluster,main="KMeans", pch = 16)
+text(na.omit(WT.scaled[,c(1,2,3,6)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+points(kmModel$centers,col=1:7,pch=8,cex=2.5)
+```
