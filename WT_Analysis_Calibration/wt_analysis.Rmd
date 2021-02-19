@@ -10,6 +10,8 @@ library(transformeR)
 library(downscaleR)
 library(visualizeR)
 library(ncdf4)
+library(climate4R.value)
+
 ```
 
 ```{r}
@@ -292,10 +294,7 @@ data.frame(c(0:49),mean.vector, p95.vector, counts)
 ```
 
 calculate R01 index, Relative frequency of wet days (precip >= 1mm)
-```{r}
-library(climate4R.value)
 
-```
 
 ```{r}
 mean.vector <- c()
@@ -615,19 +614,19 @@ points(kmModel$centers[,c(1,3)],col=1:7,pch=8,cex=2.5)
 
 ```{r}
 plot(na.omit(WT.df.2016[,c(3,4)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.df.2016[,c(3,4)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.df.2016[,c(3,4)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers[,c(2,3)],col=1:7,pch=8,cex=2.5)
 
 ```
 ```{r}
 plot(na.omit(WT.df.2016[,c(2,7)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.df.2016[,c(2,7)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.df.2016[,c(2,7)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers[,c(1,4)],col=1:7,pch=8,cex=2.5)
 
 ```
 ```{r}
 plot(na.omit(WT.df.2016[,c(2,3,4,7)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.df.2016[,c(2,3,4,7)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.df.2016[,c(2,3,4,7)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers,col=1:7,pch=8,cex=2.5)
 ```
 ```{r}
@@ -652,20 +651,20 @@ summary(kmModel)
 
 ```{r}
 plot(na.omit(WT.scaled[,c(1,3)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.scaled[,c(1,3)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.scaled[,c(1,3)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers[,c(1,3)],col=1:8,pch=8,cex=2.5)
 
 ```
 
 ```{r}
 plot(na.omit(WT.scaled[,c(2,3)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.scaled[,c(2,3)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.scaled[,c(2,3)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers[,c(2,3)],col=1:7,pch=8,cex=2.5)
 
 ```
 ```{r}
 plot(na.omit(WT.scaled[,c(1,6)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.scaled[,c(1,6)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
+text(na.omit(WT.scaled[,c(1,6)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
 points(kmModel$centers[,c(1,4)],col=1:7,pch=8,cex=2.5)
 
 ```
@@ -673,6 +672,410 @@ points(kmModel$centers[,c(1,4)],col=1:7,pch=8,cex=2.5)
 WT.scaled <- as.data.frame(WT.scaled)
 
 plot(na.omit(WT.scaled[,c(1,2,3,6)]),col=kmModel$cluster,main="KMeans", pch = 16)
-text(na.omit(WT.scaled[,c(1,2,3,6)]), as.character(na.omit(WT.df.2016[,1])), cex = 0.75, pos = 2)
-points(kmModel$centers,col=1:7,pch=8,cex=2.5)
+text(na.omit(WT.scaled[,c(1,2,3,6)]), as.character(sort(unique(bmus.df$WT))), cex = 0.75, pos = 2)
+```
+```{r}
+setwd("C:/Users/usuario/Desktop/TRMM-Calibration/Data")
+rain <- read.csv('rain.txt')
+```
+#Station selection
+
+```{r}
+rain
+```
+
+
+
+```{r}
+rain <- rain[rain$timestamp > "1998-01-01",]
+rain <- rain[rain$timestamp <= "2019-12-31",]
+rain
+```
+
+
+```{r}
+counts <- c()
+code.st <- c()
+for (i in c(1:length(unique(sites$site_identifier)))) {
+  location <- unique(sites$site_identifier)[i]
+  code.st <- c(code.st,location)
+  counts <- c(counts,dim(rain[which(rain$site_identifier == location),])[1])
+}
+```
+
+```{r}
+data.frame(code.st, counts)
+```
+
+```{r}
+barplot(counts ~ code.st)
+```
+```{r}
+code.st[which(counts > 3650)]
+```
+
+
+
+
+
+```{r}
+station.df <- c()
+for (i in c(1:length(code.st[which(counts > 3650)]))) {
+  newstation <- rain[which(rain$site_identifier ==  code.st[which(counts > 3650)][i]),]
+  station.df <- rbind(station.df, newstation)
+}
+
+station.df
+```
+
+```{r}
+percentage.missing <- c()
+
+for (i in c(1:length(unique(station.df$site_identifier)))) {
+  percentage.missing <- c(percentage.missing,100 - (length(station.df[station.df$site_identifier ==unique(station.df$site_identifier)[i],]$timestamp)/as.numeric((as.Date(max(station.df[station.df$site_identifier ==unique(station.df$site_identifier)[i],]$timestamp), format = "%Y-%m-%d")-as.Date(min(station.df[station.df$site_identifier ==unique(station.df$site_identifier)[i],]$timestamp), format = "%Y-%m-%d")))*100))
+}
+
+data.frame(unique(station.df$site_identifier), percentage.missing)
+```
+# Creation of Standart (ASCII) format for station data
+
+First, stations.txt is created.
+```{r}
+lon.vector <- c()
+lat.vector <- c()
+alt.vector <- c()
+
+for (i in c(1:length(unique(station.df$site_identifier)))) {
+  lon.vector <- c(lon.vector,sites[which(sites$site_identifier ==unique(station.df$site_identifier)[i] ),]$longitude)
+  lat.vector <- c(lat.vector,sites[which(sites$site_identifier ==unique(station.df$site_identifier)[i] ),]$latitude)
+  alt.vector <- c(alt.vector,sites[which(sites$site_identifier ==unique(station.df$site_identifier)[i] ),]$elevation)
+}
+
+stations.ascii <- data.frame(unique(station.df$site_identifier),lon.vector, lat.vector, alt.vector)
+colnames(stations.ascii) <- c("station_id", "longitude", "latitude", "altitude")
+```
+
+```{r}
+stations.ascii
+```
+
+```{r}
+write.table(stations.ascii,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/stations.txt", row.names = F, sep = ",", quote = F, na = "NaN")
+```
+
+Then, variables.txt must be created
+
+```{r}
+vars <- data.frame(c("precip_obs","precip_trmm","slp"),c("Total_observated_precipitation_accumulated_in_24_hours","Total_TRMM_precipitation_accumulated_in_24_hours","Sea_level_air_pressure"),c("mm","mm","Pa"),c("NaN","NaN","NaN"),c("observation","satellite", "reanalysis"))
+
+colnames(vars)<- c("variable_id", "name", "unit", "missing_code", "type")
+vars
+```
+```{r}
+write.table(vars,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/variables.txt", row.names = F, sep = ",", quote = F, na = "NaN")
+```
+
+
+Now, for each variable, we must create a data file. For example, for observational precipitation we need a precip_obs.txt. In this file there exist the column of the date and one column for each station. So each record contains the date and the values of observed precipitation in each station for that date. 
+```{r eval=TRUE, message=FALSE}
+date.record <- c()
+for (i in c(1:length(unique(as.Date(station.df$timestamp, format = "%Y-%m-%d"))))) {
+  station.values <- c()
+  for (j in c(1:length(unique(station.df$site_identifier)))) {
+    aux.st <- station.df[station.df$site_identifier == unique(station.df$site_identifier)[j],]
+    aux.st <- aux.st[as.Date(aux.st$timestamp,format = "%Y-%m-%d") == as.Date(station.df$timestamp, format = "%Y-%m-%d")[i],]
+    if (dim(aux.st)[1] > 0) {
+      station.values <- c(station.values, aux.st$amount)
+    }else{
+      station.values <- c(station.values, NaN)
+    }
+  }
+  date.record <- rbind(date.record, station.values)
+}
+#sort(unique(as.Date(station.df$timestamp, format = "%Y-%m-%d")))
+
+
+```
+
+```{r}
+pp_obs <- data.frame(unique(as.Date(station.df$timestamp, format = "%Y-%m-%d")), date.record)
+rownames(pp_obs) <- NULL
+colnames(pp_obs) <- c("YYYYMMDD",unique(station.df$site_identifier))
+pp_obs <- pp_obs[order(pp_obs$YYYYMMDD),]
+pp_obs$YYYYMMDD <- paste(substr(pp_obs$YYYYMMDD,start = 1,stop = 4),substr(pp_obs$YYYYMMDD,start = 6,stop = 7), substr(pp_obs$YYYYMMDD,start = 9,stop = 10),sep = "")
+pp_obs
+```
+
+
+```{r}
+write.table(pp_obs,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/precip_obs.txt", row.names = F, sep = ",", quote = F, na = "NaN")
+```
+
+
+```{r}
+#pp_obs <- read.csv("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/pp_obs.txt")
+#stations.chars <- read.csv("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/stations.txt")
+idx <- which.min(abs(trmm$xyCoords$x - stations.chars$longitude))
+lon <- trmm$xyCoords$x[idx]
+
+idx2 <- which.min(abs(trmm$xyCoords$y - stations.chars$latitude))
+lat <- trmm$xyCoords$y[idx2]
+  
+trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+```
+
+```{r}
+dates <- paste(substr(trmm$Dates$start,start = 1,stop = 4),substr(trmm$Dates$start,start = 6,stop = 7), substr(trmm$Dates$start,start = 9,stop = 10),sep = "")
+
+date.record <- c(dates)
+
+for (j in c(1:length(stations.chars$latitude))) {
+  idx <- which.min(abs(trmm$xyCoords$x - stations.chars$longitude[j]))
+  lon <- trmm$xyCoords$x[idx]
+
+  idx2 <- which.min(abs(trmm$xyCoords$y - stations.chars$latitude[j]))
+  lat <- trmm$xyCoords$y[idx2]
+  
+  trmm.station <- subsetGrid(trmm, lonLim = lon, latLim = lat)
+  
+  date.record <- cbind(date.record, trmm.station$Data)
+    
+}
+pp_trmm <- as.data.frame(date.record)
+colnames(pp_trmm) <-  c("YYYYMMDD",unique(station.df$site_identifier))
+pp_trmm
+```
+
+
+```{r}
+write.table(pp_trmm,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/precip_trmm.txt", row.names = F, sep = ",", quote = F, na = "NaN")
+```
+
+```{r}
+dates <- paste(substr(psl1997.2016$Dates$start,start = 1,stop = 4),substr(psl1997.2016$Dates$start,start = 6,stop = 7), substr(psl1997.2016$Dates$start,start = 9,stop = 10),sep = "")
+
+date.record <- c(dates)
+
+for (j in c(1:length(stations.chars$latitude))) {
+  idx <- which.min(abs(psl1997.2016$xyCoords$x - stations.chars$longitude[j]))
+  lon <- psl1997.2016$xyCoords$x[idx]
+
+  idx2 <- which.min(abs(psl1997.2016$xyCoords$y - stations.chars$latitude[j]))
+  lat <- psl1997.2016$xyCoords$y[idx2]
+  
+  psl.station <- subsetGrid(psl1997.2016, lonLim = lon, latLim = lat)
+  
+  date.record <- cbind(date.record, psl.station$Data)
+    
+}
+
+
+slp <- as.data.frame(date.record)
+colnames(slp) <-  c("YYYYMMDD",unique(station.df$site_identifier))
+slp
+```
+
+```{r}
+write.table(slp,"C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii/slp.txt", quote = F ,row.names = F, sep = ",", na = "NaN")
+```
+
+Example of reading dataset generated with loadStationData
+
+```{r}
+example <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "precip_trmm")
+
+str(example)
+```
+Computation of precipitation and slp time series for a concrete location
+
+```{r}
+precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "precip_trmm")
+ 
+precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "precip_obs")
+
+slp <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "slp")
+```
+
+```{r}
+wallis.futuna.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[1])
+wallis.futuna.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[1])
+wallis.futuna.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[1])
+```
+
+```{r}
+temporalPlot(wallis.futuna.trmm,wallis.futuna.obs, xyplot.custom = list(main = "Precipitation", ylab = "mm"))
+```
+
+```{r}
+temporalPlot(wallis.futuna.slp, xyplot.custom = list(main = "Sea Level Pressure", ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(wallis.futuna.slp$Data), gpars = list(main = "Sea Level Pressure Diff", ylab = "Pa"))
+grid()
+```
+```{r}
+ndr <- (diff(wallis.futuna.slp$Data)*sin(60))/(24*sin(wallis.futuna.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[2])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[2])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[2])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[3])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[3])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[3])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[4])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[4])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[4])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[5])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[5])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[5])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[6])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[6])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[6])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
+```
+
+```{r}
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[7])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[7])
+station.slp <- subsetGrid(slp, station.id = precip_trmm$Metadata$station_id[7])
+```
+
+```{r}
+temporalPlot(station.trmm,station.obs, xyplot.custom = list(main = paste("Precipitation",station.trmm$Metadata$station_id), ylab = "mm"))
+```
+
+```{r}
+temporalPlot(station.slp, xyplot.custom = list(main = paste("Sea Level Pressure",station.trmm$Metadata$station_id), ylab = "Pa"))
+```
+
+```{r}
+ts.plot(diff(station.slp$Data), gpars = list(main = paste("Sea Level Pressure Diff",station.trmm$Metadata$station_id), ylab = "Pa"))
+grid()
+```
+
+```{r}
+ndr <- (diff(station.slp$Data)*sin(60))/(24*sin(station.slp$xyCoords$y))
+
+ts.plot(ndr, gpars = list(main = paste("NDR Index:", as.character(formatC((length(ndr[ndr > 1])/length(ndr))*100), digits = 3), "% of NDR > 1")))
+grid()
 ```
