@@ -1,0 +1,593 @@
+---
+title: "Maps of k-means over PCA of reanalysis, slp and diff slp data."
+output:
+  pdf: default
+  html_notebook: default
+---
+
+```{r eval=TRUE, message=FALSE}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(convertR)
+library(ncdf4)
+library(climate4R.value)
+library(magrittr)
+```
+```{r}
+set.seed(42)
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+```
+
+```{r}
+plot(attributes(pca$tp[[1]])$explained_variance, main = "Cumulative Explained variance for pp PCs", xlab = "PC", ylab = "Cumulative explained variance")
+```
+```{r}
+barplot(diff(attributes(pca$tp[[1]])$explained_variance)[1:200], main = "Explained variance for first 200 pp PCs", xlab = "PC", ylab = "Explained variance")
+```
+```{r}
+which(attributes(pca$tp[[1]])$explained_variance >= .8)[1]
+```
+
+```{r}
+plot(attributes(pca$msl[[1]])$explained_variance, main = "Cumulative Explained variance for slp PCs", xlab = "PC", ylab = "Cumulative explained variance")
+```
+
+```{r}
+plot(attributes(pca$diff_msl[[1]])$explained_variance, main = "Cumulative Explained variance for diff slp PCs", xlab = "PC", ylab = "Cumulative explained variance")
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+```
+
+```{r}
+pp_reanalysis <- udConvertGrid(pp_reanalysis, new.units = "mm")
+```
+
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/slp.RData")
+```
+
+
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/diff_slp.RData")
+```
+
+```{r}
+idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
+idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
+idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
+
+pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+
+```
+
+```{r}
+totWithinss <- c(1:15)
+
+for(i in 1:15){
+  kmModel<- kmeans(pca.matrix, centers = i, nstart = 1)
+  totWithinss[i]<- kmModel$tot.withinss
+
+}
+plot(x=1:15,y=totWithinss,type="b", xlab="N. Of Cluster",ylab="Within groups sum of squares")
+```
+
+
+
+
+```{r}
+k = 4
+kmModel <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel)
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Precipitation Data for each cluster")
+```
+
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4))
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', center = 101280, rev.color = T, contour = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "SLP Data for each cluster")
+```
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.slp, members = 1), "Cluster2" = subsetGrid(kmedias.slp, members = 2),"Cluster3" = subsetGrid(kmedias.slp, members = 3),"Cluster4" = subsetGrid(kmedias.slp, members = 4))
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries',  rev.color = T,  as.table = T, names.attr =paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(diff.slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Diff SLP Data for each cluster")
+```
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.diff.slp, members = 1), "Cluster2" = subsetGrid(kmedias.diff.slp, members = 2),"Cluster3" = subsetGrid(kmedias.diff.slp, members = 3),"Cluster4" = subsetGrid(kmedias.diff.slp, members = 4))
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+for (i in c(1:k)) {
+  kmedias.pp.cl <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == i))
+  kmedias.pp.cl <- aggregateGrid(kmedias.pp.cl, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN ="mean"))
+  ts.plot(kmedias.pp.cl$Data, main = paste("Precipitation values in cluster", i),ylim = c(0,1))
+  abline(h = mean(kmedias.pp.cl$Data), col = 'red')
+  
+}    
+
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "P98"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+p98.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(p98.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "P98 precipitation Index")
+```
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "SDII"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "SDII Index")
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "DrySpellP50"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "DrySpellP50 Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "DrySpellP90"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "DrySpellP90 Index")
+```
+
+```{r}
+k = 5
+kmModel <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel)
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Precipitation Data for each cluster")
+```
+
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4), "Cluster5" = subsetGrid(kmedias.pp, members = 5))
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', center = 101280, rev.color = T, contour = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "SLP Data for each cluster")
+```
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.slp, members = 1), "Cluster2" = subsetGrid(kmedias.slp, members = 2),"Cluster3" = subsetGrid(kmedias.slp, members = 3),"Cluster4" = subsetGrid(kmedias.slp, members = 4), "Cluster5" = subsetGrid(kmedias.slp, members = 5))
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries',  rev.color = T,  as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+```{r}
+b <- boxplot(aggregateGrid(diff.slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Diff SLP Data for each cluster")
+```
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.diff.slp, members = 1), "Cluster2" = subsetGrid(kmedias.diff.slp, members = 2),"Cluster3" = subsetGrid(kmedias.diff.slp, members = 3),"Cluster4" = subsetGrid(kmedias.diff.slp, members = 4), "Cluster5" = subsetGrid(kmedias.diff.slp, members = 5))
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+for (i in c(1:k)) {
+  kmedias.pp.cl <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == i))
+  kmedias.pp.cl <- aggregateGrid(kmedias.pp.cl, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN ="mean"))
+  ts.plot(kmedias.pp.cl$Data, main = paste("Precipitation values in cluster", i),ylim = c(0,1))
+  abline(h = mean(kmedias.pp.cl$Data), col = 'red')
+  
+}    
+
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "P98"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+p98.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(p98.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "P98 precipitation Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "SDII"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "SDII Index")
+```
+
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "WetSpellP90"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "WetSpellP90 Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "DrySpellP50"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "DrySpellP50 Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "DrySpellP90"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "DrySpellP90 Index")
+```
+
+```{r}
+k = 6
+kmModel <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel)
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Cluster", 1:k, sep = "_"))
+```
+```{r}
+b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Precipitation Data for each cluster")
+```
+
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4),"Cluster5" = subsetGrid(kmedias.pp, members = 5),"Cluster6" = subsetGrid(kmedias.pp, members = 6))
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', center = 101280, rev.color = T, contour = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.slp, members = 1), "Cluster2" = subsetGrid(kmedias.slp, members = 2),"Cluster3" = subsetGrid(kmedias.slp, members = 3),"Cluster4" = subsetGrid(kmedias.slp, members = 4),"Cluster5" = subsetGrid(kmedias.slp, members = 5),"Cluster6" = subsetGrid(kmedias.slp, members = 6))
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries',  rev.color = T,  as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(diff.slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Diff SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.diff.slp, members = 1), "Cluster2" = subsetGrid(kmedias.diff.slp, members = 2),"Cluster3" = subsetGrid(kmedias.diff.slp, members = 3),"Cluster4" = subsetGrid(kmedias.diff.slp, members = 4),"Cluster5" = subsetGrid(kmedias.diff.slp, members = 5),"Cluster6" = subsetGrid(kmedias.diff.slp, members = 6))
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+for (i in c(1:k)) {
+  kmedias.pp.cl <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == i))
+  kmedias.pp.cl <- aggregateGrid(kmedias.pp.cl, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN ="mean"))
+  ts.plot(kmedias.pp.cl$Data, main = paste("Precipitation values in cluster", i),ylim = c(0,1))
+  abline(h = mean(kmedias.pp.cl$Data), col = 'red')
+  
+}    
+
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "P98"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+p98.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(p98.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "P98 precipitation Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "SDII"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "SDII Index")
+```
+
+
+```{r}
+k = 7
+kmModel <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel)
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Precipitation Data for each cluster")
+```
+
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4),"Cluster5" = subsetGrid(kmedias.pp, members = 5),"Cluster6" = subsetGrid(kmedias.pp, members = 6),"Cluster7" = subsetGrid(kmedias.pp, members = 7))
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', center = 101280, rev.color = T, contour = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.slp, members = 1), "Cluster2" = subsetGrid(kmedias.slp, members = 2),"Cluster3" = subsetGrid(kmedias.slp, members = 3),"Cluster4" = subsetGrid(kmedias.slp, members = 4),"Cluster5" = subsetGrid(kmedias.slp, members = 5),"Cluster6" = subsetGrid(kmedias.slp, members = 6),"Cluster7" = subsetGrid(kmedias.slp, members = 7))
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries',  rev.color = T,  as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(diff.slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Diff SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.diff.slp, members = 1), "Cluster2" = subsetGrid(kmedias.diff.slp, members = 2),"Cluster3" = subsetGrid(kmedias.diff.slp, members = 3),"Cluster4" = subsetGrid(kmedias.diff.slp, members = 4),"Cluster5" = subsetGrid(kmedias.diff.slp, members = 5),"Cluster6" = subsetGrid(kmedias.diff.slp, members = 6),"Cluster7" = subsetGrid(kmedias.diff.slp, members = 7))
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+for (i in c(1:k)) {
+  kmedias.pp.cl <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == i))
+  kmedias.pp.cl <- aggregateGrid(kmedias.pp.cl, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN ="mean"))
+  ts.plot(kmedias.pp.cl$Data, main = paste("Precipitation values in cluster", i),ylim = c(0,1))
+  abline(h = mean(kmedias.pp.cl$Data), col = 'red')
+  
+}    
+
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "P98"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+p98.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(p98.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "P98 precipitation Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "SDII"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "SDII Index")
+```
+
+
+
+```{r}
+k = 8
+kmModel <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel)
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Precipitation Data for each cluster")
+```
+
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4),"Cluster5" = subsetGrid(kmedias.pp, members = 5),"Cluster6" = subsetGrid(kmedias.pp, members = 6),"Cluster7" = subsetGrid(kmedias.pp, members = 7),"Cluster8" = subsetGrid(kmedias.pp, members = 8))
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', center = 101280, rev.color = T, contour = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.slp, members = 1), "Cluster2" = subsetGrid(kmedias.slp, members = 2),"Cluster3" = subsetGrid(kmedias.slp, members = 3),"Cluster4" = subsetGrid(kmedias.slp, members = 4),"Cluster5" = subsetGrid(kmedias.slp, members = 5),"Cluster6" = subsetGrid(kmedias.slp, members = 6),"Cluster7" = subsetGrid(kmedias.slp, members = 7),"Cluster8" = subsetGrid(kmedias.slp, members = 8))
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel$cluster == x)) %>% climatology())
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries',  rev.color = T,  as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]))
+```
+
+```{r}
+b <- boxplot(aggregateGrid(diff.slp, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel$cluster, main = "Diff SLP Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.diff.slp, members = 1), "Cluster2" = subsetGrid(kmedias.diff.slp, members = 2),"Cluster3" = subsetGrid(kmedias.diff.slp, members = 3),"Cluster4" = subsetGrid(kmedias.diff.slp, members = 4),"Cluster5" = subsetGrid(kmedias.diff.slp, members = 5),"Cluster6" = subsetGrid(kmedias.diff.slp, members = 6),"Cluster7" = subsetGrid(kmedias.diff.slp, members = 7),"Cluster8" = subsetGrid(kmedias.diff.slp, members = 8))
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+for (i in c(1:k)) {
+  kmedias.pp.cl <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == i))
+  kmedias.pp.cl <- aggregateGrid(kmedias.pp.cl, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN ="mean"))
+  ts.plot(kmedias.pp.cl$Data, main = paste("Precipitation values in cluster", i),ylim = c(0,1))
+  abline(h = mean(kmedias.pp.cl$Data), col = 'red')
+  
+}    
+
+```
+
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "P98"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+p98.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(p98.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "P98 precipitation Index")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel$cluster == x)) %>% valueIndex(,index.code = "SDII"))
+
+for (i in c(1:k)) {
+  lista[[i]] =  climatology(lista[[i]]$Index) 
+}
+index <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(index,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Total of days in cluster", 1:k, ":",kmModel$size[1:k]), main = "SDII Index")
+```
+
+
+
+
+
+
+
