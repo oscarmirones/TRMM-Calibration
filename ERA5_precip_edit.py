@@ -21,3 +21,8 @@ def era5_modifier(data, output_name):
     ds.tp.attrs = z.tp.attrs
     
     ds.to_netcdf(output_name)
+    
+##to execute the function: 
+
+##import ERA5_precip_edit
+## ERA5_precip_edit.era5_modifier()
