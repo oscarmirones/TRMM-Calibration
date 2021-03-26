@@ -1,0 +1,2604 @@
+---
+title: "Assessment of TRMM vs PACRAIN raw data conditioned to Weather Types"
+author: "Óscar Mirones Alonso"
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+    toc_depth: 5
+---
+
+# Preview
+
+In this part everything necessary prior to the analysis is collected. The libraries are loaded, the data and some function necessary for the calculation of some validation index is implemented.
+
+First, libraries are loaded
+```{r eval=TRUE, message=FALSE}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(convertR)
+library(ncdf4)
+library(climate4R.value)
+library(magrittr)
+library(evd)
+library(formattable) #neccessary to create tables with colors
+library(lubridate) #neccessary to calculate differences in years between dates
+```
+```{r}
+set.seed(42)
+```
+
+PCA data from other notebook is loaded.
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+```
+
+Reanalysis data is loaded to compute later the spatialPlot of the clusters.
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+
+```
+
+
+Here a subsetting is made with the goal of restrict the number of PCs involved (since PCs'number related with precipitation is over 2000). So, the variance explained is 0.75,0.9 and 0.9 for precipitation, sea level pressure and difference sea level pressure respectively. 
+```{r}
+idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
+idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
+idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
+
+pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+
+```
+
+
+It is good to preview the intracluster error against the number of clusters computed. The selection made is k=5 and k=6.
+```{r}
+totWithinss <- c(1:15)
+
+for(i in 1:15){
+  kmModel<- kmeans(pca.matrix, centers = i, nstart = 1)
+  totWithinss[i]<- kmModel$tot.withinss
+
+}
+plot(x=1:15,y=totWithinss,type="b", xlab="N. Of Cluster",ylab="Within groups sum of squares")
+```
+
+
+
+So, the kmeans model is computed and saved for the optimum k.
+```{r}
+k = 5
+kmModel5 <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel5)
+```
+Station locations are plotted with their corresponding codes.
+```{r}
+stationInfo("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip")
+```
+
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
+
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
+```
+
+
+```{r}
+k = 6
+kmModel6 <- kmeans(pca.matrix, centers = k, nstart = 10)
+summary(kmModel6)
+```
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel6$cluster == x)) %>% climatology())
+
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel6$size[1:k]))
+```
+
+MaxReturnValue function is computed to calculate the Maximum Return Value in 20 years index.
+```{r}
+MaxReturnValue <- function(data){
+  #library(lubridate)
+  #nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  nyears <- 20
+  data.maxYear <- aggregateGrid(redim(data), aggr.y = list(FUN = "max",na.rm = TRUE))
+
+  data.maxrv <- climatology(data, clim.fun = list(FUN = "mean", na.rm = T))
+
+  auxData <- data.maxYear$Data
+  auxData[which(is.infinite(auxData))] <- NA
+
+  if (any(!is.na(auxData))){
+      auxGEV <- fgev(auxData)
+      if ((auxGEV$estimate[3] - auxGEV$std.err[3] < 0) & (0  < auxGEV$estimate[3] + auxGEV$std.err[3])){
+        auxGEV <- fgev(auxData, shape = 0)
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = 0)
+      }else{
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = auxGEV$estimate[3])
+      }
+      data.maxrv <- as.numeric(auxRV)
+      names(data.maxrv) <- paste("RV",nyears,"_max", sep = "")
+  }
+  return(data.maxrv)
+  }
+```
+
+```{r}
+#load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+#pp_reanalysis <- subsetYears(pp_reanalysis, years = 1998:2019)
+#pp_reanalysis$Data <- pp_reanalysis$Data*24
+```
+
+Finally, PACRAIN and TRMM precipitation data is loaded using loadeR funciton loadStationData. This data readout is easy and fast since both datasets are established in a ASCII format for each of the 7 PACRAIN station existing in our target area. Obviously, precip_obs is related with PACRAIN data and precip_trmm with TRMM data.
+
+```{r}
+precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+
+```
+
+```{r}
+precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+
+```
+# Assessment in PACRAIN stations
+
+## Kolopelu (Wallis and Futuna) Station
+
+### Raw not conditioned data
+
+Target station data(TRMM and PACRAIN) selection.
+```{r}
+i=1
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Hakupu (Niue) station
+
+### Raw not conditioned data
+```{r}
+i=2
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Rarotonga International Airport (Cook Island) station
+
+### Raw not conditioned data
+```{r}
+i=3
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+#### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+#### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Bells Beach (New Zealand) station
+
+### Raw not conditioned data
+```{r}
+i=4
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Possible ocean buoy
+
+### Raw not conditioned data
+```{r}
+i=5
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Aoloau (American Samoa) station
+
+### Raw not conditioned data
+```{r}
+i=6
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+## Aoloau (American Samoa) station (low elevation)
+
+### Raw not conditioned data
+```{r}
+i=7
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+```
+
+```{r}
+# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
+#  
+# lon <- pp_reanalysis$xyCoords$x[idx]
+#   
+# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
+# lat <- pp_reanalysis$xyCoords$y[idx2]
+#   
+# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
+```
+
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+# temporalPlot(station.obs,station.reanalysis, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+
+
+```{r}
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+index.trmm.rv20max <- MaxReturnValue(station.trmm)
+
+# index.reanalysis <- valueIndex1D(station.reanalysis$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+# index.reanalysis.rv20max <- MaxReturnValue(station.reanalysis)
+```
+```{r}
+index.obs <- c(index.obs, index.obs.rv20max)
+index.trmm <- c(index.trmm, index.trmm.rv20max)
+# index.reanalysis <- c(index.reanalysis, index.reanalysis.rv20max)
+```
+
+```{r}
+df <- data.frame(index.obs,index.trmm)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+### Assessment conditioned on WT
+
+#### k=5
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+#### k = 6
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.obs.cl6 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 5))
+station.trmm.cl6 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel6$cluster == 6))
+```
+
+```{r}
+index.obs.cl1 <- valueIndex1D(station.obs.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl1 <- c(index.obs.cl1, valueIndex1D(station.obs.cl1$Data[!is.na(station.obs.cl1$Data)], index.codes = "P98WetAmount"))
+index.obs.cl1.rv20max <- MaxReturnValue(station.obs.cl1)
+
+index.trmm.cl1 <- valueIndex1D(station.trmm.cl1$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl1 <- c(index.trmm.cl1, valueIndex1D(station.trmm.cl1$Data[!is.na(station.trmm.cl1$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl1.rv20max <- MaxReturnValue(station.trmm.cl1)
+```
+
+```{r}
+index.obs.cl1 <- c(index.obs.cl1, index.obs.cl1.rv20max)
+index.trmm.cl1 <- c(index.trmm.cl1, index.trmm.cl1.rv20max)
+```
+
+##### Index assessment conditioned on WT1
+```{r}
+df <- data.frame(index.obs.cl1,index.trmm.cl1)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+```{r}
+index.obs.cl2 <- valueIndex1D(station.obs.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl2 <- c(index.obs.cl2, valueIndex1D(station.obs.cl2$Data[!is.na(station.obs.cl2$Data)], index.codes = "P98WetAmount"))
+index.obs.cl2.rv20max <- MaxReturnValue(station.obs.cl2)
+
+index.trmm.cl2 <- valueIndex1D(station.trmm.cl2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl2 <- c(index.trmm.cl2, valueIndex1D(station.trmm.cl2$Data[!is.na(station.trmm.cl2$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl2.rv20max <- MaxReturnValue(station.trmm.cl2)
+```
+
+```{r}
+index.obs.cl2 <- c(index.obs.cl2, index.obs.cl2.rv20max)
+index.trmm.cl2<- c(index.trmm.cl2, index.trmm.cl2.rv20max)
+```
+
+##### Index assessment conditioned on WT2
+```{r}
+df <- data.frame(index.obs.cl2,index.trmm.cl2)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl3 <- valueIndex1D(station.obs.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl3 <- c(index.obs.cl3, valueIndex1D(station.obs.cl3$Data[!is.na(station.obs.cl3$Data)], index.codes = "P98WetAmount"))
+index.obs.cl3.rv20max <- MaxReturnValue(station.obs.cl3)
+
+index.trmm.cl3 <- valueIndex1D(station.trmm.cl3$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl3 <- c(index.trmm.cl3, valueIndex1D(station.trmm.cl3$Data[!is.na(station.trmm.cl3$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl3.rv20max <- MaxReturnValue(station.trmm.cl3)
+```
+
+```{r}
+index.obs.cl3 <- c(index.obs.cl3, index.obs.cl3.rv20max)
+index.trmm.cl3 <- c(index.trmm.cl3, index.trmm.cl3.rv20max)
+```
+
+##### Index assessment conditioned on WT3
+```{r}
+df <- data.frame(index.obs.cl3,index.trmm.cl3)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl4 <- valueIndex1D(station.obs.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl4 <- c(index.obs.cl4, valueIndex1D(station.obs.cl4$Data[!is.na(station.obs.cl4$Data)], index.codes = "P98WetAmount"))
+index.obs.cl4.rv20max <- MaxReturnValue(station.obs.cl4)
+
+index.trmm.cl4 <- valueIndex1D(station.trmm.cl4$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl4 <- c(index.trmm.cl4, valueIndex1D(station.trmm.cl4$Data[!is.na(station.trmm.cl4$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl4.rv20max <- MaxReturnValue(station.trmm.cl4)
+```
+
+```{r}
+index.obs.cl4 <- c(index.obs.cl4, index.obs.cl4.rv20max)
+index.trmm.cl4 <- c(index.trmm.cl4, index.trmm.cl4.rv20max)
+```
+
+##### Index assessment conditioned on WT4
+```{r}
+df <- data.frame(index.obs.cl4,index.trmm.cl4)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+index.obs.cl5 <- valueIndex1D(station.obs.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl5 <- c(index.obs.cl5, valueIndex1D(station.obs.cl5$Data[!is.na(station.obs.cl5$Data)], index.codes = "P98WetAmount"))
+index.obs.cl5.rv20max <- MaxReturnValue(station.obs.cl5)
+
+index.trmm.cl5 <- valueIndex1D(station.trmm.cl5$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl5 <- c(index.trmm.cl5, valueIndex1D(station.trmm.cl5$Data[!is.na(station.trmm.cl5$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl5.rv20max <- MaxReturnValue(station.trmm.cl5)
+```
+
+```{r}
+index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
+index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
+```
+
+##### Index assessment conditioned on WT5
+```{r}
+df <- data.frame(index.obs.cl5,index.trmm.cl5)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+
+```{r}
+index.obs.cl6 <- valueIndex1D(station.obs.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs.cl6 <- c(index.obs.cl6, valueIndex1D(station.obs.cl6$Data[!is.na(station.obs.cl6$Data)], index.codes = "P98WetAmount"))
+index.obs.cl6.rv20max <- MaxReturnValue(station.obs.cl6)
+
+index.trmm.cl6 <- valueIndex1D(station.trmm.cl6$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.trmm.cl6 <- c(index.trmm.cl6, valueIndex1D(station.trmm.cl6$Data[!is.na(station.trmm.cl6$Data)], index.codes = "P98WetAmount"))
+index.trmm.cl6.rv20max <- MaxReturnValue(station.trmm.cl6)
+```
+
+```{r}
+index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
+index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
+```
+
+##### Index assessment conditioned on WT6
+```{r}
+df <- data.frame(index.obs.cl6,index.trmm.cl6)
+colnames(df) <- c("Obs", "TRMM")
+format(df, digits = 3, scientific = 5)
+```
+
+```{r}
+diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
+                      abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
+                      )
+colnames(diff.df) <- c("Raw","WT1", "WT2","WT3", "WT4","WT5","WT6")
+
+format(diff.df, digits = 3, scientific = 5)
+```
+
+
