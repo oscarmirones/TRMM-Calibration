@@ -330,6 +330,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -490,6 +491,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -680,6 +682,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -840,6 +843,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -1029,6 +1033,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -1161,7 +1166,7 @@ index.obs.cl5 <- c(index.obs.cl5, index.obs.cl5.rv20max)
 index.trmm.cl5 <- c(index.trmm.cl5, index.trmm.cl5.rv20max)
 ```
 
-#### Index assessment conditioned on WT5
+##### Index assessment conditioned on WT5
 ```{r}
 df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
@@ -1184,12 +1189,13 @@ index.obs.cl6 <- c(index.obs.cl6, index.obs.cl6.rv20max)
 index.trmm.cl6 <- c(index.trmm.cl6, index.trmm.cl6.rv20max)
 ```
 
-#### Index assessment conditioned on WT6
+##### Index assessment conditioned on WT6
 ```{r}
 df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -1380,6 +1386,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -1540,6 +1547,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -1730,6 +1738,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -1890,6 +1899,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -2080,6 +2090,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -2240,6 +2251,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
@@ -2430,7 +2442,7 @@ df <- data.frame(index.obs.cl5,index.trmm.cl5)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
-
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5)
@@ -2591,7 +2603,7 @@ df <- data.frame(index.obs.cl6,index.trmm.cl6)
 colnames(df) <- c("Obs", "TRMM")
 format(df, digits = 3, scientific = 5)
 ```
-
+##### Difference between obs and raw/WT-conditioned data
 ```{r}
 diff.df <- data.frame(abs(index.trmm-index.obs),abs(index.trmm.cl1-index.obs.cl1),
                       abs(index.trmm.cl2-index.obs.cl2), abs(index.trmm.cl3-index.obs.cl3), abs(index.trmm.cl4-index.obs.cl4), abs(index.trmm.cl5-index.obs.cl5),abs(index.trmm.cl6-index.obs.cl6)
