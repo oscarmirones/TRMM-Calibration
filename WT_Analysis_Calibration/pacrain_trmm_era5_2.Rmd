@@ -8,6 +8,22 @@ output:
     toc_depth: 5
 ---
 
+```{r}
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+}else{
+  dir <- "/vols/seal/oceano/gmeteo/WORK/juaco/trmm"
+}
+
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = dir)
+```
+
+```{r check-wd}
+getwd()
+```
 # Preview
 
 In this part everything necessary prior to the analysis is collected. The libraries are loaded, the data and some function necessary for the calculation of some validation index is implemented.
@@ -35,14 +51,15 @@ library(sp)
 set.seed(42)
 ```
 
+
 PCA data from other notebook is loaded.
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+load("pca.RData")
 ```
 
 Reanalysis data is loaded to compute later the spatialPlot of the clusters.
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+load("pp_reanalysis.RData")
 ```
 
 
@@ -81,10 +98,10 @@ summary(kmModel5)
 ```
 Station locations are plotted with their corresponding codes.
 ```{r}
-stationInfo("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip")
+stationInfo("SP_ascii.zip")
 ```
 ```{r}
-cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series.csv')
+cyclones <- read.csv('SP_cyclones_time_series.csv')
 cyclones$Date <- as.Date(cyclones$Date)
 cyclones <- cyclones[,2:3]
 
@@ -229,12 +246,12 @@ grid()
 Finally, PACRAIN and TRMM precipitation data is loaded using loadeR funciton loadStationData. This data readout is easy and fast since both datasets are established in a ASCII format for each of the 7 PACRAIN station existing in our target area. Obviously, precip_obs is related with PACRAIN data and precip_trmm with TRMM data.
 
 ```{r}
-precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+precip_obs <- loadStationData("SP_ascii.zip", var = "precip_obs")
 
 ```
 
 ```{r}
-precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+precip_trmm <- loadStationData("SP_ascii.zip", var = "precip_trmm")
 
 ```
 ```{r}
