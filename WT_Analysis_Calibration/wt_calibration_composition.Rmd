@@ -780,45 +780,138 @@ legend("topleft", legend = c("Combinated 12","TRMM"), pch = c(2,4), col = c("bla
 
 grid() 
 ```
+```{r}
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+
+idx <- which(!is.na(station.obs$Data))
+
+combination1$Data <- combination1$Data[idx]
+
+good <- !is.na(combination1$Data)
+ord <- order(combination1$Data[good])
+ord.x <- combination1$Data[good][ord]
+combination1$Data <- ord.x
+
+combination2$Data <- combination2$Data[idx]
+
+good <- !is.na(combination2$Data)
+ord <- order(combination2$Data[good])
+ord.x <- combination2$Data[good][ord]
+combination2$Data <- ord.x
+
+combination3$Data <- combination3$Data[idx]
+
+good <- !is.na(combination3$Data)
+ord <- order(combination3$Data[good])
+ord.x <- combination3$Data[good][ord]
+combination3$Data <- ord.x
+
+combination4$Data <- combination4$Data[idx]
+
+good <- !is.na(combination4$Data)
+ord <- order(combination4$Data[good])
+ord.x <- combination4$Data[good][ord]
+combination4$Data <- ord.x
+
+combination5$Data <- combination5$Data[idx]
+
+good <- !is.na(combination5$Data)
+ord <- order(combination5$Data[good])
+ord.x <- combination5$Data[good][ord]
+combination5$Data <- ord.x
+
+combination6$Data <- combination6$Data[idx]
+
+good <- !is.na(combination6$Data)
+ord <- order(combination6$Data[good])
+ord.x <- combination6$Data[good][ord]
+combination6$Data <- ord.x
+```
+
 
 ```{r}
 qqplot(station.obs$Data, combination1$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination2$Data), col = "red", pch = 3, cex = .5)
 
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination2$Data[!is.na(station.obs$Data)][order(combination2$Data[!is.na(station.obs$Data)])], col = "red", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination3$Data, col = "pink", pch = 3, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination4$Data), col = "blue", pch = 2, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(0,combination5$Data), col = "green", pch = 2, cex = .5)
 
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination3$Data[!is.na(station.obs$Data)][order(combination3$Data[!is.na(station.obs$Data)])], col = "pink", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination6$Data), col = "gold", pch = 3, cex = .5)
 
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination4$Data[!is.na(station.obs$Data)][order(combination4$Data[!is.na(station.obs$Data)])], col = "blue", pch = 2, cex = .5)
-
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination5$Data[!is.na(station.obs$Data)][order(combination5$Data[!is.na(station.obs$Data)])], col = "green", pch = 2, cex = .5)
-
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination6$Data[!is.na(station.obs$Data)][order(combination6$Data[!is.na(station.obs$Data)])], col = "gold", pch = 3, cex = .5)
-
-legend("topleft", legend = c("C1","C2","C3","C4","C5","C6"), pch = c(2,3,3,2,2,3), col = c("black", "red","pink","blue","green","gold"))
+legend("topleft", legend = c("C7","C8","C9","C10","C11","C12"), pch = c(2,3,3,2,2,3), col = c("black", "red","pink","blue","green","gold"))
 
 grid() 
 ```
+
+
+```{r}
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+
+idx <- which(!is.na(station.obs$Data))
+
+combination8$Data <- combination8$Data[idx]
+
+good <- !is.na(combination8$Data)
+ord <- order(combination8$Data[good])
+ord.x <- combination8$Data[good][ord]
+combination8$Data <- ord.x
+
+combination9$Data <- combination9$Data[idx]
+
+good <- !is.na(combination9$Data)
+ord <- order(combination9$Data[good])
+ord.x <- combination9$Data[good][ord]
+combination9$Data <- ord.x
+
+combination10$Data <- combination10$Data[idx]
+
+good <- !is.na(combination10$Data)
+ord <- order(combination10$Data[good])
+ord.x <- combination10$Data[good][ord]
+combination10$Data <- ord.x
+
+combination11$Data <- combination11$Data[idx]
+
+good <- !is.na(combination11$Data)
+ord <- order(combination11$Data[good])
+ord.x <- combination11$Data[good][ord]
+combination11$Data <- ord.x
+
+combination12$Data <- combination12$Data[idx]
+
+good <- !is.na(combination12$Data)
+ord <- order(combination12$Data[good])
+ord.x <- combination12$Data[good][ord]
+combination12$Data <- ord.x
+```
+
+
 
 ```{r}
 qqplot(station.obs$Data, combination7$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination8$Data), col = "red", pch = 3, cex = .5)
 
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination8$Data[!is.na(station.obs$Data)][order(combination8$Data[!is.na(station.obs$Data)])], col = "red", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination9$Data, col = "pink", pch = 3, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination10$Data), col = "blue", pch = 2, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination11$Data, col = "green", pch = 2, cex = .5)
 
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination9$Data[!is.na(station.obs$Data)][order(combination9$Data[!is.na(station.obs$Data)])], col = "pink", pch = 3, cex = .5)
-
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination10$Data[!is.na(station.obs$Data)][order(combination10$Data[!is.na(station.obs$Data)])], col = "blue", pch = 2, cex = .5)
-
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination11$Data[!is.na(station.obs$Data)][order(combination11$Data[!is.na(station.obs$Data)])], col = "green", pch = 2, cex = .5)
-
-points(station.obs$Data[!is.na(station.obs$Data)][order(station.obs$Data[!is.na(station.obs$Data)])], combination12$Data[!is.na(station.obs$Data)][order(combination12$Data[!is.na(station.obs$Data)])], col = "gold", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination12$Data), col = "gold", pch = 3, cex = .5)
 
 legend("topleft", legend = c("C7","C8","C9","C10","C11","C12"), pch = c(2,3,3,2,2,3), col = c("black", "red","pink","blue","green","gold"))
 
 grid() 
 ```
+
