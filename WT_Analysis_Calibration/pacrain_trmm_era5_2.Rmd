@@ -101,7 +101,7 @@ Station locations are plotted with their corresponding codes.
 stationInfo("SP_ascii.zip")
 ```
 ```{r}
-cyclones <- read.csv('SP_cyclones_time_series.csv')
+cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1998_2020.csv')
 cyclones$Date <- as.Date(cyclones$Date)
 cyclones <- cyclones[,2:3]
 
@@ -176,7 +176,7 @@ coordinates(cyc.data) <- ~X+Y
 In the next chunk, cyclones that appear each month are added to the levelplot.
 ```{r}
 levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))+    layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/125, col = 'blue'))
+          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))+    layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))
 ```
 
 ```{r}
