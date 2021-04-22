@@ -495,7 +495,7 @@ combination1 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -519,7 +519,7 @@ combination2 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -544,7 +544,7 @@ combination3 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -569,7 +569,7 @@ combination4 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -594,7 +594,7 @@ combination5 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -619,7 +619,7 @@ combination6 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -644,7 +644,7 @@ combination7 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -669,7 +669,7 @@ combination8 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -694,7 +694,7 @@ combination9 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -719,7 +719,7 @@ combination10 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -744,7 +744,7 @@ combination11 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -769,7 +769,7 @@ combination12 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -793,13 +793,13 @@ combination13 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 7","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 13","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid() 
 ```
@@ -818,13 +818,13 @@ combination14 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 8","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 14","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid()  
 ```
@@ -843,13 +843,13 @@ combination15 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 9","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 15","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid()  
 ```
@@ -868,13 +868,13 @@ combination16 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 10","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 16","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid()  
 ```
@@ -893,13 +893,13 @@ combination17 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 11","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 17","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid() 
 ```
@@ -918,13 +918,13 @@ combination18 <- wt_conditioned
 
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
 
-legend("topleft", legend = c("Combinated 12","TRMM"), pch = c(2,4), col = c("black", "red"))
+legend("topleft", legend = c("Combinated 18","TRMM"), pch = c(2,4), col = c("black", "red"))
 
 grid() 
 ```
@@ -981,7 +981,7 @@ combination6$Data <- ord.x
 
 
 ```{r}
-qqplot(station.obs$Data, combination1$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,300))
+qqplot(station.obs$Data, combination1$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim =  c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -1046,7 +1046,7 @@ combination12$Data <- ord.x
 
 
 ```{r}
-qqplot(station.obs$Data, combination7$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, combination7$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5,ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
@@ -1116,7 +1116,7 @@ combination18$Data <- ord.x
 
 
 ```{r}
-qqplot(station.obs$Data, combination13$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, combination13$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
 
 abline(a = 0, b = 1)
 
