@@ -45,8 +45,7 @@ pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$
 
 ```{r}
 k = 5
-kmModel5 <- kmeans(pca.matrix, centers = k, nstart = 10)
-summary(kmModel5)
+load('C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData')
 ```
 
 ```{r}
@@ -265,7 +264,7 @@ index.cal.station.cl1.gpqm2 <- c(index.cal.station.cl1.gpqm2, index.cal.station.
 ```
 
 ```{r}
-df <- data.frame(index.obs.cl1, index.trmm.cl1, index.cal.station.cl1.pqm, index.cal.station.cl1.eqm, index.cal.station.cl1.gpqm, index.cal.station.cl1.gpqm2)
+df <- data.frame(index.obs.cl1, index.trmm.cl1-index.obs.cl1, index.cal.station.cl1.pqm-index.obs.cl1, index.cal.station.cl1.eqm-index.obs.cl1, index.cal.station.cl1.gpqm-index.obs.cl1, index.cal.station.cl1.gpqm2-index.obs.cl1)
 colnames(df) <- c("Obs WT1","TRMM WT1","PQM WT1", "EQM WT1", "GPQM WT1", "GPQM2 WT1")
 format(df, digits = 3, scientific = 5)
 ```
@@ -320,7 +319,7 @@ index.cal.station.cl2.gpqm2 <- c(index.cal.station.cl2.gpqm2, index.cal.station.
 ```
 
 ```{r}
-df <- data.frame(index.obs.cl2, index.trmm.cl2, index.cal.station.cl2.pqm, index.cal.station.cl2.eqm, index.cal.station.cl2.gpqm, index.cal.station.cl2.gpqm2)
+df <- data.frame(index.obs.cl2, index.trmm.cl2-index.obs.cl2, index.cal.station.cl2.pqm-index.obs.cl2, index.cal.station.cl2.eqm-index.obs.cl2, index.cal.station.cl2.gpqm-index.obs.cl2, index.cal.station.cl2.gpqm2-index.obs.cl2)
 colnames(df) <- c("Obs WT2","TRMM WT2","PQM WT2", "EQM WT2", "GPQM WT2", "GPQM2 WT2")
 format(df, digits = 3, scientific = 5)
 ```
@@ -373,7 +372,7 @@ index.cal.station.cl3.gpqm2 <- c(index.cal.station.cl3.gpqm2, index.cal.station.
 ```
 
 ```{r}
-df <- data.frame(index.obs.cl3, index.trmm.cl3, index.cal.station.cl3.pqm, index.cal.station.cl3.eqm, index.cal.station.cl3.gpqm, index.cal.station.cl3.gpqm2)
+df <- data.frame(index.obs.cl3, index.trmm.cl3-index.obs.cl3, index.cal.station.cl3.pqm-index.obs.cl3, index.cal.station.cl3.eqm-index.obs.cl3, index.cal.station.cl3.gpqm-index.obs.cl3, index.cal.station.cl3.gpqm2-index.obs.cl3)
 colnames(df) <- c("Obs WT3","TRMM WT3","PQM WT3", "EQM WT3", "GPQM WT3", "GPQM2 WT3")
 format(df, digits = 3, scientific = 5)
 ```
@@ -425,7 +424,7 @@ index.cal.station.cl4.gpqm2 <- c(index.cal.station.cl4.gpqm2, index.cal.station.
 ```
 
 ```{r}
-df <- data.frame(index.obs.cl4, index.trmm.cl4, index.cal.station.cl4.pqm, index.cal.station.cl4.eqm, index.cal.station.cl4.gpqm, index.cal.station.cl4.gpqm2)
+df <- data.frame(index.obs.cl4, index.trmm.cl4-index.obs.cl4, index.cal.station.cl4.pqm-index.obs.cl4, index.cal.station.cl4.eqm-index.obs.cl4, index.cal.station.cl4.gpqm-index.obs.cl4, index.cal.station.cl4.gpqm2-index.obs.cl4)
 colnames(df) <- c("Obs WT4","TRMM WT4","PQM WT4", "EQM WT4", "GPQM WT4", "GPQM2 WT4")
 format(df, digits = 3, scientific = 5)
 ```
@@ -477,15 +476,15 @@ index.cal.station.cl5.gpqm2 <- c(index.cal.station.cl5.gpqm2, index.cal.station.
 ```
 
 ```{r}
-df <- data.frame(index.obs.cl5, index.trmm.cl5, index.cal.station.cl5.pqm, index.cal.station.cl5.eqm, index.cal.station.cl5.gpqm, index.cal.station.cl5.gpqm2)
+df <- data.frame(index.obs.cl5, index.trmm.cl5-index.obs.cl5, index.cal.station.cl5.pqm-index.obs.cl5, index.cal.station.cl5.eqm-index.obs.cl5, index.cal.station.cl5.gpqm-index.obs.cl5, index.cal.station.cl5.gpqm2-index.obs.cl5)
 colnames(df) <- c("Obs WT5","TRMM WT5","PQM WT5", "EQM WT5", "GPQM WT5", "GPQM2 WT5")
 format(df, digits = 3, scientific = 5)
 ```
 
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
-                           cal.station.cl4.gpqm2, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.pqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -507,8 +506,8 @@ legend("topleft", legend = c("Combinated 1","TRMM"), pch = c(2,4), col = c("blac
 grid() 
 ```
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
-                           cal.station.cl4.gpqm2, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.pqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -532,8 +531,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
-                           cal.station.cl4.gpqm2, cal.station.cl5.eqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -557,8 +556,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
-                           cal.station.cl4.gpqm2, cal.station.cl5.eqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -582,8 +581,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
-                           cal.station.cl4.pqm, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -607,8 +606,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
-                           cal.station.cl4.pqm, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.pqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -632,7 +631,7 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.pqm, cal.station.cl3.pqm,
                            cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
@@ -657,7 +656,7 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.pqm, cal.station.cl3.pqm,
                            cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
@@ -682,8 +681,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
-                           cal.station.cl4.eqm, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -707,8 +706,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
-                           cal.station.cl4.eqm, cal.station.cl5.gpqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -732,8 +731,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.gpqm2,
-                           cal.station.cl4.eqm, cal.station.cl5.eqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -757,8 +756,8 @@ grid()
 ```
 
 ```{r}
-wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
-                           cal.station.cl4.eqm, cal.station.cl5.eqm, dimension = "time")
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.eqm, dimension = "time")
 
 wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
 wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
@@ -780,6 +779,157 @@ legend("topleft", legend = c("Combinated 12","TRMM"), pch = c(2,4), col = c("bla
 
 grid() 
 ```
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.pqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination13 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 7","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid() 
+```
+
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.pqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination14 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 8","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid()  
+```
+
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination15 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 9","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid()  
+```
+
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.eqm, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination16 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 10","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid()  
+```
+
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.eqm, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination17 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 11","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid() 
+```
+
+```{r}
+wt_conditioned <- bindGrid(cal.station.cl1.gpqm2, cal.station.cl2.gpqm2, cal.station.cl3.pqm,
+                           cal.station.cl4.pqm, cal.station.cl5.gpqm2, dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+combination18 <- wt_conditioned
+
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("Combinated 12","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid() 
+```
+
+
 ```{r}
 station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
 
@@ -831,19 +981,19 @@ combination6$Data <- ord.x
 
 
 ```{r}
-qqplot(station.obs$Data, combination1$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+qqplot(station.obs$Data, combination1$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,300))
 
 abline(a = 0, b = 1)
 
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination2$Data), col = "red", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,6), combination2$Data), col = "red", pch = 3, cex = .5)
 
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination3$Data, col = "pink", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,4),combination3$Data), col = "pink", pch = 3, cex = .5)
  
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination4$Data), col = "blue", pch = 2, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,4), combination4$Data), col = "blue", pch = 2, cex = .5)
  
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2),combination5$Data), col = "green", pch = 2, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,4),combination5$Data), col = "green", pch = 2, cex = .5)
 
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,3), combination6$Data), col = "gold", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,4), combination6$Data), col = "gold", pch = 3, cex = .5)
 
 legend("topleft", legend = c("C1","C2","C3","C4","C5","C6"), pch = c(2,3,3,2,2,3), col = c("black", "red","pink","blue","green","gold"))
 
@@ -902,11 +1052,11 @@ abline(a = 0, b = 1)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,3), combination8$Data), col = "red", pch = 3, cex = .5)
 
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination9$Data, col = "pink", pch = 3, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2),combination9$Data), col = "pink", pch = 3, cex = .5)
  
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination10$Data), col = "blue", pch = 2, cex = .5)
  
-points(sort(station.obs$Data[!is.na(station.obs$Data)]), combination11$Data, col = "green", pch = 2, cex = .5)
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2),combination11$Data), col = "green", pch = 2, cex = .5)
 
 points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination12$Data), col = "gold", pch = 3, cex = .5)
 
@@ -915,3 +1065,72 @@ legend("topleft", legend = c("C7","C8","C9","C10","C11","C12"), pch = c(2,3,3,2,
 grid() 
 ```
 
+```{r}
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+
+idx <- which(!is.na(station.obs$Data))
+
+combination13$Data <- combination13$Data[idx]
+
+good <- !is.na(combination13$Data)
+ord <- order(combination13$Data[good])
+ord.x <- combination13$Data[good][ord]
+combination13$Data <- ord.x
+
+combination14$Data <- combination14$Data[idx]
+
+good <- !is.na(combination14$Data)
+ord <- order(combination14$Data[good])
+ord.x <- combination14$Data[good][ord]
+combination14$Data <- ord.x
+
+combination15$Data <- combination15$Data[idx]
+
+good <- !is.na(combination15$Data)
+ord <- order(combination15$Data[good])
+ord.x <- combination15$Data[good][ord]
+combination15$Data <- ord.x
+
+combination16$Data <- combination16$Data[idx]
+
+good <- !is.na(combination16$Data)
+ord <- order(combination16$Data[good])
+ord.x <- combination16$Data[good][ord]
+combination16$Data <- ord.x
+
+combination17$Data <- combination17$Data[idx]
+
+good <- !is.na(combination17$Data)
+ord <- order(combination17$Data[good])
+ord.x <- combination17$Data[good][ord]
+combination17$Data <- ord.x
+
+combination18$Data <- combination18$Data[idx]
+
+good <- !is.na(combination18$Data)
+ord <- order(combination18$Data[good])
+ord.x <- combination18$Data[good][ord]
+combination18$Data <- ord.x
+```
+
+
+```{r}
+qqplot(station.obs$Data, combination13$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,3), combination14$Data), col = "red", pch = 3, cex = .5)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2),combination15$Data), col = "pink", pch = 3, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination16$Data), col = "blue", pch = 2, cex = .5)
+ 
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2),combination17$Data), col = "green", pch = 2, cex = .5)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), c(rep(0,2), combination18$Data), col = "gold", pch = 3, cex = .5)
+
+legend("topleft", legend = c("C13","C14","C15","C16","C17","C18"), pch = c(2,3,3,2,2,3), col = c("black", "red","pink","blue","green","gold"))
+
+grid() 
+```
