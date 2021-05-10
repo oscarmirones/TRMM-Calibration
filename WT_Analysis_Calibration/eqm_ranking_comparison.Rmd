@@ -1,0 +1,1534 @@
+---
+title: "EQM ranking comparison"
+author: "Óscar Mirones Alonso"
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+    toc_depth: 5
+---
+
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(convertR)
+library(ncdf4)
+library(climate4R.value)
+library(magrittr)
+library(evd)
+library(formattable) #neccessary to create tables with colors
+library(lubridate) #neccessary to calculate differences in years between dates
+library(lattice)
+library(ggplot2)
+
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+}else{
+  dir <- "/vols/abedul/meteo/mironeso/trmm"
+}
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = dir)
+```
+
+# Stations' computation
+```{r}
+set.seed(42)
+
+load("pca.RData")
+load("pp_reanalysis.RData")
+idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
+idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
+idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
+
+pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+
+k = 5
+load('C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData')
+
+precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+```
+
+```{r}
+precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+kmModel5$cluster <- kmModel5$cluster[1:8034]
+
+```
+
+```{r}
+MaxReturnValue <- function(data){
+  #library(lubridate)
+  #nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  nyears <- 20
+  data.maxYear <- aggregateGrid(redim(data), aggr.y = list(FUN = "max",na.rm = TRUE))
+
+  data.maxrv <- climatology(data, clim.fun = list(FUN = "mean", na.rm = T))
+
+  auxData <- data.maxYear$Data
+  auxData[which(is.infinite(auxData))] <- NA
+
+  if (any(!is.na(auxData))){
+      auxGEV <- fgev(auxData)
+      if ((auxGEV$estimate[3] - auxGEV$std.err[3] < 0) & (0  < auxGEV$estimate[3] + auxGEV$std.err[3])){
+        auxGEV <- fgev(auxData, shape = 0)
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = 0)
+      }else{
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = auxGEV$estimate[3])
+      }
+      data.maxrv <- as.numeric(auxRV)
+      names(data.maxrv) <- paste("RV",nyears,"_max", sep = "")
+  }
+  return(data.maxrv)
+  }
+```
+
+
+```{r}
+pp_reanalysis <- subsetGrid(pp_reanalysis, years = 1998:2019)
+```
+
+```{r}
+normalization <- function(measure){
+  measure.norm <- c()
+  #measure must be a vector with the value of a certain measure of different calibrations
+  for (i in c(1:length(measure))) {
+    measure.norm <- c(measure.norm, 1-((measure[i]-min(measure))/(max(measure)-min(measure))))
+  }
+  return(measure.norm)
+}
+```
+
+
+## Wallis and Futuna
+```{r}
+i=1
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st1 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st1 <- index.cal.station.conditioned
+```
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st1[i]-index.obs.st1[i]),abs(index.cal.station.conditined.st1[i]-index.obs.st1[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- (sum(score.eqm.st1[1:2])+3*sum(score.eqm.st1[7:9]))/15
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st1 <- (sum(score.eqm.conditioned.st1[1:2])+3*sum(score.eqm.conditioned.st1[7:9]))/15
+
+score.eqm.conditioned.st1.triple <- score.eqm.conditioned.st1
+score.eqm.st1.triple <- score.eqm.st1
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- (sum(score.eqm.st1[1:2])+2*sum(score.eqm.st1[7:9]))/12
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st1 <- (sum(score.eqm.conditioned.st1[1:2])+2*sum(score.eqm.conditioned.st1[7:9]))/12
+
+score.eqm.conditioned.st1.double <- score.eqm.conditioned.st1
+score.eqm.st1.double <- score.eqm.st1
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- mean(score.eqm.st1)
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st1<- mean(score.eqm.conditioned.st1) 
+
+score.eqm.conditioned.st1.mean <- score.eqm.conditioned.st1
+score.eqm.st1.mean <- score.eqm.st1
+```
+
+## Alofi, Niue
+```{r}
+i=2
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st2 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st2 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st2 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st2[i]-index.obs.st2[i]),abs(index.cal.station.conditined.st2[i]-index.obs.st2[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- (sum(score.eqm.st2[1:2])+3*sum(score.eqm.st2[7:9]))/15
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st2 <- (sum(score.eqm.conditioned.st2[1:2])+3*sum(score.eqm.conditioned.st2[7:9]))/15
+
+score.eqm.conditioned.st2.triple <- score.eqm.conditioned.st2
+score.eqm.st2.triple <- score.eqm.st2
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- (sum(score.eqm.st2[1:2])+2*sum(score.eqm.st2[7:9]))/12
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st2 <- (sum(score.eqm.conditioned.st2[1:2])+2*sum(score.eqm.conditioned.st2[7:9]))/12
+
+score.eqm.conditioned.st2.double <- score.eqm.conditioned.st2
+score.eqm.st2.double <- score.eqm.st2
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- mean(score.eqm.st2)
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st2<- mean(score.eqm.conditioned.st2) 
+
+score.eqm.conditioned.st2.mean <- score.eqm.conditioned.st2
+score.eqm.st2.mean <- score.eqm.st2
+```
+## Rarotonga IA, Cook Island
+```{r}
+i=3
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st3 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st3 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st3 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st3[i]-index.obs.st3[i]),abs(index.cal.station.conditined.st3[i]-index.obs.st3[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- (sum(score.eqm.st3[1:2])+3*sum(score.eqm.st3[7:9]))/15
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st3 <- (sum(score.eqm.conditioned.st3[1:2])+3*sum(score.eqm.conditioned.st3[7:9]))/15
+
+score.eqm.conditioned.st3.triple <- score.eqm.conditioned.st3
+score.eqm.st3.triple <- score.eqm.st3
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- (sum(score.eqm.st3[1:2])+2*sum(score.eqm.st3[7:9]))/12
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st3 <- (sum(score.eqm.conditioned.st3[1:2])+2*sum(score.eqm.conditioned.st3[7:9]))/12
+
+score.eqm.conditioned.st3.double <- score.eqm.conditioned.st3
+score.eqm.st3.double <- score.eqm.st3
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- mean(score.eqm.st3)
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st3<- mean(score.eqm.conditioned.st3) 
+
+score.eqm.conditioned.st3.mean <- score.eqm.conditioned.st3
+score.eqm.st3.mean <- score.eqm.st3
+```
+## Bells Beach, New Zealand
+```{r}
+i=4
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st4 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st4 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st4 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st4[i]-index.obs.st4[i]),abs(index.cal.station.conditined.st4[i]-index.obs.st4[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- (sum(score.eqm.st4[1:2])+3*sum(score.eqm.st4[7:9]))/15
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st4 <- (sum(score.eqm.conditioned.st4[1:2])+3*sum(score.eqm.conditioned.st4[7:9]))/15
+
+score.eqm.conditioned.st4.triple <- score.eqm.conditioned.st4
+score.eqm.st4.triple <- score.eqm.st4
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- (sum(score.eqm.st4[1:2])+2*sum(score.eqm.st4[7:9]))/12
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st4 <- (sum(score.eqm.conditioned.st4[1:2])+2*sum(score.eqm.conditioned.st4[7:9]))/12
+
+score.eqm.conditioned.st4.double <- score.eqm.conditioned.st4
+score.eqm.st4.double <- score.eqm.st4
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- mean(score.eqm.st4)
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st4<- mean(score.eqm.conditioned.st4) 
+
+score.eqm.conditioned.st4.mean <- score.eqm.conditioned.st4
+score.eqm.st4.mean <- score.eqm.st4
+```
+
+## ocean buoy?
+```{r}
+i=5
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st5 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st5 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st5 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st5[i]-index.obs.st5[i]),abs(index.cal.station.conditined.st5[i]-index.obs.st5[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- (sum(score.eqm.st5[1:2])+3*sum(score.eqm.st5[7:9]))/15
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st5 <- (sum(score.eqm.conditioned.st5[1:2])+3*sum(score.eqm.conditioned.st5[7:9]))/15
+
+score.eqm.conditioned.st5.triple <- score.eqm.conditioned.st5
+score.eqm.st5.triple <- score.eqm.st5
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- (sum(score.eqm.st5[1:2])+2*sum(score.eqm.st5[7:9]))/12
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st5 <- (sum(score.eqm.conditioned.st5[1:2])+2*sum(score.eqm.conditioned.st5[7:9]))/12
+
+score.eqm.conditioned.st5.double <- score.eqm.conditioned.st5
+score.eqm.st5.double <- score.eqm.st5
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- mean(score.eqm.st5)
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st5<- mean(score.eqm.conditioned.st5) 
+
+score.eqm.conditioned.st5.mean <- score.eqm.conditioned.st5
+score.eqm.st5.mean <- score.eqm.st5
+```
+## Aoloau, American Samoa
+```{r}
+i=6
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st6 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st6 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st6 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st6[i]-index.obs.st6[i]),abs(index.cal.station.conditined.st6[i]-index.obs.st6[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- (sum(score.eqm.st6[1:2])+3*sum(score.eqm.st6[7:9]))/15
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st6 <- (sum(score.eqm.conditioned.st6[1:2])+3*sum(score.eqm.conditioned.st6[7:9]))/15
+
+score.eqm.conditioned.st6.triple <- score.eqm.conditioned.st6
+score.eqm.st6.triple <- score.eqm.st6
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- (sum(score.eqm.st6[1:2])+2*sum(score.eqm.st6[7:9]))/12
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st6 <- (sum(score.eqm.conditioned.st6[1:2])+2*sum(score.eqm.conditioned.st6[7:9]))/12
+
+score.eqm.conditioned.st6.double <- score.eqm.conditioned.st6
+score.eqm.st6.double <- score.eqm.st6
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- mean(score.eqm.st6)
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st6<- mean(score.eqm.conditioned.st6) 
+
+score.eqm.conditioned.st6.mean <- score.eqm.conditioned.st6
+score.eqm.st6.mean <- score.eqm.st6
+```
+
+## Nu'uuli, American Samoa
+```{r}
+i=7
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st7 <- index.obs
+
+cal.station <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station <- valueIndex1D(cal.station$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station <- c(index.cal.station, valueIndex1D(cal.station$Data[!is.na(cal.station$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max <- MaxReturnValue(cal.station)
+
+index.cal.station <- c(index.cal.station, index.cal.station.rv20max)
+
+index.cal.station.eqm.st7 <- index.cal.station
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+```
+
+
+```{r}
+cal.station.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.cl1 <- subsetDimension(cal.station.cl1, dimension = "time", indices = which(!is.na(cal.station.cl1$Data)))
+
+cal.station.cl1$Dates$start <- as.POSIXct(cal.station.cl1$Dates$start,tz = "GMT")
+cal.station.cl1$Dates$end <- as.POSIXct(cal.station.cl1$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.cl2 <- subsetDimension(cal.station.cl2, dimension = "time", indices = which(!is.na(cal.station.cl2$Data)))
+
+cal.station.cl2$Dates$start <- as.POSIXct(cal.station.cl2$Dates$start,tz = "GMT")
+cal.station.cl2$Dates$end <- as.POSIXct(cal.station.cl2$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.cl3 <- subsetDimension(cal.station.cl3, dimension = "time", indices = which(!is.na(cal.station.cl3$Data)))
+
+cal.station.cl3$Dates$start <- as.POSIXct(cal.station.cl3$Dates$start,tz = "GMT")
+cal.station.cl3$Dates$end <- as.POSIXct(cal.station.cl3$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.cl4 <- subsetDimension(cal.station.cl4, dimension = "time", indices = which(!is.na(cal.station.cl4$Data)))
+
+cal.station.cl4$Dates$start <- as.POSIXct(cal.station.cl4$Dates$start,tz = "GMT")
+cal.station.cl4$Dates$end <- as.POSIXct(cal.station.cl4$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.cl5 <- subsetDimension(cal.station.cl5, dimension = "time", indices = which(!is.na(cal.station.cl5$Data)))
+
+cal.station.cl5$Dates$start <- as.POSIXct(cal.station.cl5$Dates$start,tz = "GMT")
+cal.station.cl5$Dates$end <- as.POSIXct(cal.station.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.cl1, cal.station.cl2, cal.station.cl3,
+                    cal.station.cl4,cal.station.cl5)
+
+
+station.cal.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.conditioned <- valueIndex1D(station.cal.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.conditioned.rv20max <- MaxReturnValue(station.cal.conditioned)
+
+index.cal.station.conditioned <- c(index.cal.station.conditioned,
+                                   index.cal.station.conditioned.rv20max)
+index.cal.station.conditined.st7 <- index.cal.station.conditioned
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm.st7[i]-index.obs.st7[i]),abs(index.cal.station.conditined.st7[i]-index.obs.st7[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- (sum(score.eqm.st7[1:2])+3*sum(score.eqm.st7[7:9]))/15
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st7 <- (sum(score.eqm.conditioned.st7[1:2])+3*sum(score.eqm.conditioned.st7[7:9]))/15
+
+score.eqm.conditioned.st7.triple <- score.eqm.conditioned.st7
+score.eqm.st7.triple <- score.eqm.st7
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- (sum(score.eqm.st7[1:2])+2*sum(score.eqm.st7[7:9]))/12
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st7 <- (sum(score.eqm.conditioned.st7[1:2])+2*sum(score.eqm.conditioned.st7[7:9]))/12
+
+score.eqm.conditioned.st7.double <- score.eqm.conditioned.st7
+score.eqm.st7.double <- score.eqm.st7
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- mean(score.eqm.st7)
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][2]) 
+}
+score.eqm.conditioned.st7<- mean(score.eqm.conditioned.st7) 
+
+score.eqm.conditioned.st7.mean <- score.eqm.conditioned.st7
+score.eqm.st7.mean <- score.eqm.st7
+```
+
+# Boxplots
+```{r}
+df <- data.frame(c(score.eqm.st1.mean, score.eqm.st2.mean,score.eqm.st3.mean, score.eqm.st4.mean, score.eqm.st5.mean,score.eqm.st6.mean,score.eqm.st7.mean,score.eqm.conditioned.st1.mean, score.eqm.conditioned.st2.mean,score.eqm.conditioned.st3.mean, score.eqm.conditioned.st4.mean, score.eqm.conditioned.st5.mean,score.eqm.conditioned.st6.mean,score.eqm.conditioned.st7.mean), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with equal weights")
+```
+
+
+
+```{r}
+df <- data.frame(c(score.eqm.st1.double, score.eqm.st2.double,score.eqm.st3.double, score.eqm.st4.double, score.eqm.st5.double,score.eqm.st6.double,score.eqm.st7.double,score.eqm.conditioned.st1.double, score.eqm.conditioned.st2.double,score.eqm.conditioned.st3.double, score.eqm.conditioned.st4.double, score.eqm.conditioned.st5.double,score.eqm.conditioned.st6.double,score.eqm.conditioned.st7.double), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with different weights")
+```
+```{r}
+df <- data.frame(c(score.eqm.st1.triple, score.eqm.st2.triple,score.eqm.st3.triple, score.eqm.st4.triple, score.eqm.st5.triple,score.eqm.st6.triple,score.eqm.st7.triple,score.eqm.conditioned.st1.triple, score.eqm.conditioned.st2.triple,score.eqm.conditioned.st3.triple, score.eqm.conditioned.st4.triple, score.eqm.conditioned.st5.triple,score.eqm.conditioned.st6.triple,score.eqm.conditioned.st7.triple), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with different weights")
+```
+
+
+

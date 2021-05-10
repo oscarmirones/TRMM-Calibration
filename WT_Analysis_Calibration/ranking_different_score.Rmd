@@ -1,5 +1,5 @@
 ---
-title: "Ranking Index with calibration conditioned to WT"
+title: "Ranking Index with weighted score"
 author: "Óscar Mirones Alonso"
 output: 
   html_notebook:
