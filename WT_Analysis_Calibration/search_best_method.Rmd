@@ -1,0 +1,450 @@
+---
+title: "Search for the best method of calibration at Aoloau station"
+output: html_notebook
+---
+
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(convertR)
+library(ncdf4)
+library(climate4R.value)
+library(magrittr)
+library(evd)
+library(formattable) #neccessary to create tables with colors
+library(lubridate)
+```
+
+```{r}
+set.seed(42)
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
+idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
+idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
+
+pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+k = 5
+load('C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData')
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
+
+kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
+```
+
+
+
+```{r}
+precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+```
+
+
+```{r}
+kmModel5$cluster <- kmModel5$cluster[1:8034]
+```
+
+```{r}
+MaxReturnValue <- function(data){
+  #library(lubridate)
+  #nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  nyears <- 20
+  data.maxYear <- aggregateGrid(redim(data), aggr.y = list(FUN = "max",na.rm = TRUE))
+
+  data.maxrv <- climatology(data, clim.fun = list(FUN = "mean", na.rm = T))
+
+  auxData <- data.maxYear$Data
+  auxData[which(is.infinite(auxData))] <- NA
+
+  if (any(!is.na(auxData))){
+      auxGEV <- fgev(auxData)
+      if ((auxGEV$estimate[3] - auxGEV$std.err[3] < 0) & (0  < auxGEV$estimate[3] + auxGEV$std.err[3])){
+        auxGEV <- fgev(auxData, shape = 0)
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = 0)
+      }else{
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = auxGEV$estimate[3])
+      }
+      data.maxrv <- as.numeric(auxRV)
+      names(data.maxrv) <- paste("RV",nyears,"_max", sep = "")
+  }
+  return(data.maxrv)
+  }
+
+```
+
+
+```{r}
+i=6
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+```
+
+```{r}
+temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))
+```
+```{r}
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+
+
+```{r eval=TRUE, message=FALSE}
+correlation.cl1 <- c()
+methods <- c("scaling", "pqm","eqm", "eqm_extrapol", "gpqm")
+
+index.pred.all <- list()
+pred.data <- list()
+
+for (i in seq(2,length(methods))) {
+  index.pred <- c()
+  
+  if(methods[i] == "eqm_extrapol") {
+    
+    pred <- biasCorrection( station.obs.cl1, station.trmm.cl1, precipitation = TRUE, method = "eqm", extrapolation = "constant")
+      
+  }else if(methods[i] == "scaling"){
+    
+    pred <- biasCorrection(station.obs.cl1, station.trmm.cl1, precipitation = TRUE, method = "scaling", scaling.type = "multiplicative")
+      
+  }else if(methods[i] == "gpqm"){
+    
+    pred <- biasCorrection(station.obs.cl1, station.trmm.cl1, precipitation = TRUE, method = "gpqm", theta = .95)
+      
+  }else{
+    
+    pred <- biasCorrection(station.obs.cl1, station.trmm.cl1, precipitation = TRUE, method = methods[i])
+      
+  }
+  
+  pred <- subsetDimension(pred, dimension = "time", indices = which(kmModel5$cluster == 1))
+  
+  
+  index.pred <- valueIndex1D(pred$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+  index.pred <- c(index.pred, valueIndex1D(pred$Data[!is.na(pred$Data)], index.codes = "P98WetAmount"))
+  index.pred.rv20max <- MaxReturnValue(pred)
+
+  index.pred<- c(index.pred, index.pred.rv20max)
+  
+  
+  
+  index.pred.all[[length(index.pred.all)+1]] <- index.pred
+  pred.data[[length(pred.data)+1]] <- pred
+  
+  correlation.cl1 <- c(correlation.cl1,cor(station.obs.cl1$Data, pred$Data, method = "spearman", use = "complete.obs"))
+  
+}
+correlation.cl1$cor <- correlation.cl1
+correlation.cl1$bias <- index.pred.all
+correlation.cl1$method <- methods[2:5]
+correlation.cl1$Data <- pred.data
+```
+
+
+```{r eval=TRUE, message=FALSE}
+correlation.cl2 <- c()
+methods <- c("scaling", "pqm","eqm", "eqm_extrapol", "gpqm")
+
+index.pred.all <- list()
+pred.data <- list()
+
+for (i in seq(2,length(methods))) {
+  index.pred <- c()
+  
+  if(methods[i] == "eqm_extrapol") {
+    
+    pred <- biasCorrection( station.obs.cl2, station.trmm.cl2, precipitation = TRUE, method = "eqm", extrapolation = "constant")
+      
+  }else if(methods[i] == "scaling"){
+    
+    pred <- biasCorrection(station.obs.cl2, station.trmm.cl2, precipitation = TRUE, method = "scaling", scaling.type = "multiplicative")
+      
+  }else if(methods[i] == "gpqm"){
+    
+    pred <- biasCorrection(station.obs.cl2, station.trmm.cl2, precipitation = TRUE, method = "gpqm", theta = .95)
+      
+  }else{
+    
+    pred <- biasCorrection(station.obs.cl2, station.trmm.cl2, precipitation = TRUE, method = methods[i])
+      
+  }
+  
+  pred <- subsetDimension(pred, dimension = "time", indices = which(kmModel5$cluster == 2))
+  
+  
+  index.pred <- valueIndex1D(pred$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+  index.pred <- c(index.pred, valueIndex1D(pred$Data[!is.na(pred$Data)], index.codes = "P98WetAmount"))
+  index.pred.rv20max <- MaxReturnValue(pred)
+
+  index.pred<- c(index.pred, index.pred.rv20max)
+  
+  
+  
+  index.pred.all[[length(index.pred.all)+1]] <- index.pred
+  pred.data[[length(pred.data)+1]] <- pred
+  
+  correlation.cl2 <- c(correlation.cl2,cor(station.obs.cl2$Data, pred$Data, method = "spearman", use = "complete.obs"))
+  
+}
+correlation.cl2$cor <- correlation.cl2
+correlation.cl2$bias <- index.pred.all
+correlation.cl2$method <- methods[2:5]
+correlation.cl2$Data <- pred.data
+```
+
+
+```{r eval=TRUE, message=FALSE}
+correlation.cl3 <- c()
+methods <- c("scaling", "pqm","eqm", "eqm_extrapol", "gpqm")
+
+index.pred.all <- list()
+pred.data <- list()
+
+for (i in seq(2,length(methods))) {
+  index.pred <- c()
+  
+  if(methods[i] == "eqm_extrapol") {
+    
+    pred <- biasCorrection( station.obs.cl3, station.trmm.cl3, precipitation = TRUE, method = "eqm", extrapolation = "constant")
+      
+  }else if(methods[i] == "scaling"){
+    
+    pred <- biasCorrection(station.obs.cl3, station.trmm.cl3, precipitation = TRUE, method = "scaling", scaling.type = "multiplicative")
+      
+  }else if(methods[i] == "gpqm"){
+    
+    pred <- biasCorrection(station.obs.cl3, station.trmm.cl3, precipitation = TRUE, method = "gpqm", theta = .95)
+      
+  }else{
+    
+    pred <- biasCorrection(station.obs.cl3, station.trmm.cl3, precipitation = TRUE, method = methods[i])
+      
+  }
+  
+  pred <- subsetDimension(pred, dimension = "time", indices = which(kmModel5$cluster == 3))
+  
+  
+  index.pred <- valueIndex1D(pred$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+  index.pred <- c(index.pred, valueIndex1D(pred$Data[!is.na(pred$Data)], index.codes = "P98WetAmount"))
+  index.pred.rv20max <- MaxReturnValue(pred)
+  index.pred<- c(index.pred, index.pred.rv20max)
+  
+  
+  
+  index.pred.all[[length(index.pred.all)+1]] <- index.pred
+  pred.data[[length(pred.data)+1]] <- pred
+  
+  correlation.cl3 <- c(correlation.cl3,cor(station.obs.cl3$Data, pred$Data, method = "spearman", use = "complete.obs"))
+  
+}
+correlation.cl3$cor <- correlation.cl3
+correlation.cl3$bias <- index.pred.all
+correlation.cl3$method <- methods[2:5]
+correlation.cl3$Data <- pred.data
+```
+
+```{r eval=TRUE, message=FALSE}
+correlation.cl4 <- c()
+methods <- c("scaling", "pqm","eqm", "eqm_extrapol", "gpqm")
+
+index.pred.all <- list()
+pred.data <- list()
+
+for (i in seq(2,length(methods))) {
+  index.pred <- c()
+  
+  if(methods[i] == "eqm_extrapol") {
+    
+    pred <- biasCorrection( station.obs.cl4, station.trmm.cl4, precipitation = TRUE, method = "eqm", extrapolation = "constant")
+      
+  }else if(methods[i] == "scaling"){
+    
+    pred <- biasCorrection(station.obs.cl4, station.trmm.cl4, precipitation = TRUE, method = "scaling", scaling.type = "multiplicative")
+      
+  }else if(methods[i] == "gpqm"){
+    
+    pred <- biasCorrection(station.obs.cl4, station.trmm.cl4, precipitation = TRUE, method = "gpqm", theta = .95)
+      
+  }else{
+    
+    pred <- biasCorrection(station.obs.cl4, station.trmm.cl4, precipitation = TRUE, method = methods[i])
+      
+  }
+  
+  pred <- subsetDimension(pred, dimension = "time", indices = which(kmModel5$cluster == 4))
+  
+  
+  index.pred <- valueIndex1D(pred$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+  index.pred <- c(index.pred, valueIndex1D(pred$Data[!is.na(pred$Data)], index.codes = "P98WetAmount"))
+  index.pred.rv20max <- MaxReturnValue(pred)
+
+  index.pred<- c(index.pred, index.pred.rv20max)
+  
+  
+  
+  index.pred.all[[length(index.pred.all)+1]] <- index.pred
+  pred.data[[length(pred.data)+1]] <- pred
+  
+  
+  correlation.cl4 <- c(correlation.cl4,cor(station.obs.cl4$Data, pred$Data, method = "spearman", use = "complete.obs"))
+  
+}
+correlation.cl4$cor <- correlation.cl4
+correlation.cl4$bias <- index.pred.all
+correlation.cl4$method <- methods[2:5]
+correlation.cl4$Data <- pred.data
+```
+
+```{r eval=TRUE, message=FALSE}
+correlation.cl5 <- c()
+methods <- c("scaling", "pqm","eqm", "eqm_extrapol", "gpqm")
+
+index.pred.all <- list()
+pred.data <- list()
+
+for (i in seq(2,length(methods))) {
+  index.pred <- c()
+  
+  if(methods[i] == "eqm_extrapol") {
+    
+    pred <- biasCorrection( station.obs.cl5, station.trmm.cl5, precipitation = TRUE, method = "eqm", extrapolation = "constant")
+      
+  }else if(methods[i] == "scaling"){
+    
+    pred <- biasCorrection(station.obs.cl5, station.trmm.cl5, precipitation = TRUE, method = "scaling", scaling.type = "multiplicative")
+      
+  }else if(methods[i] == "gpqm"){
+    
+    pred <- biasCorrection(station.obs.cl5, station.trmm.cl5, precipitation = TRUE, method = "gpqm", theta = .95)
+      
+  }else{
+    
+    pred <- biasCorrection(station.obs.cl5, station.trmm.cl5, precipitation = TRUE, method = methods[i])
+      
+  }
+  
+  pred <- subsetDimension(pred, dimension = "time", indices = which(kmModel5$cluster == 5))
+  
+  
+  index.pred <- valueIndex1D(pred$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+  index.pred <- c(index.pred, valueIndex1D(pred$Data[!is.na(pred$Data)], index.codes = "P98WetAmount"))
+  index.pred.rv20max <- MaxReturnValue(pred)
+
+  index.pred<- c(index.pred, index.pred.rv20max)
+  
+  
+  
+  index.pred.all[[length(index.pred.all)+1]] <- index.pred
+  
+  pred.data[[length(pred.data)+1]] <- pred
+
+  correlation.cl5 <- c(correlation.cl5,cor(station.obs.cl5$Data, pred$Data, method = "spearman", use = "complete.obs"))
+  
+}
+correlation.cl5$cor <- correlation.cl5
+correlation.cl5$bias <- index.pred.all
+correlation.cl5$method <- methods[2:5]
+correlation.cl5$Data <- pred.data
+
+```
+
+```{r}
+paste('for cl1 the best method is ', correlation.cl1$method[which.max(correlation.cl1$cor)])
+paste('for cl2 the best method is ', correlation.cl2$method[which.max(correlation.cl2$cor)])
+paste('for cl3 the best method is ', correlation.cl3$method[which.max(correlation.cl3$cor)])
+paste('for cl4 the best method is ', correlation.cl4$method[which.max(correlation.cl4$cor)])
+paste('for cl5 the best method is ', correlation.cl5$method[which.max(correlation.cl5$cor)])
+```
+
+
+```{r}
+idx.cl1 <- which.max(correlation.cl1$cor)
+idx.cl2 <- which.max(correlation.cl2$cor)
+idx.cl3 <- which.max(correlation.cl3$cor)
+idx.cl4 <- which.max(correlation.cl4$cor)
+idx.cl5 <- which.max(correlation.cl5$cor)
+
+
+wt_conditioned <- bindGrid(correlation.cl1$Data[[idx.cl1]], correlation.cl2$Data[[idx.cl2]],correlation.cl3$Data[[idx.cl3]],correlation.cl4$Data[[idx.cl4]],correlation.cl5$Data[[idx.cl5]], dimension = "time")
+
+wt_conditioned$Data <- wt_conditioned$Data[!is.na(wt_conditioned$Data)]
+wt_conditioned$Dates$start <- unique(wt_conditioned$Dates$start)
+wt_conditioned$Dates$end <- unique(wt_conditioned$Dates$end)
+
+```
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+
+abline(a = 0, b = 1)
+
+points(sort(station.obs$Data[!is.na(station.obs$Data)]), sort(station.trmm$Data[!is.na(station.obs$Data)][-1]), col = "red", pch = 4, cex = .5)
+
+legend("topleft", legend = c("WT-Conditioned","TRMM"), pch = c(2,4), col = c("black", "red"))
+
+grid()
+```
+```{r}
+paste('CL1:',correlation.cl1$cor[idx.cl1], 'CL2:',correlation.cl2$cor[idx.cl2],'CL3:', correlation.cl3$cor[idx.cl3],'CL4:', correlation.cl4$cor[idx.cl4],'CL5:', correlation.cl5$cor[idx.cl5])
+```
+
+```{r}
+index.wt_conditioned <- valueIndex1D(wt_conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+index.obs <- valueIndex1D(station.obs$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.obs <- c(index.obs,valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.trmm <- valueIndex1D(station.trmm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.trmm <- c(index.trmm,valueIndex1D(station.trmm$Data[!is.na(station.trmm$Data)], index.codes = "P98WetAmount"))
+
+#index.wt_conditioned.rv20max <- MaxReturnValue(wt_conditioned)
+```
+
+
+```{r}
+df <- data.frame(index.obs,  index.trmm, index.wt_conditioned)
+colnames(df) <- c("Obs","TRMM","WT_Cond")
+format(df, digits = 3, scientific = 5)
+```
+
+
+
+```{r}
+st1.obs <- subsetDimension(station.obs.cl1, dimension = "time", indices =  which(!is.na(station.obs.cl1$Data)))
+
+st1.trmm <- subsetDimension(station.trmm.cl1, dimension = "time", indices =  which(!is.na(station.obs.cl1$Data)))
+
+st1.cal <- biasCorrection(st1.obs, st1.trmm, newdata = st1.trmm,precipitation = T, method = "scaling", scaling.type = "multiplicative")
+```
+
+
+

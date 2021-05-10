@@ -114,6 +114,13 @@ pres_cyc <- pres_cyc[,2:3]
 ```
 
 ```{r}
+wind <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_sustained_wind.csv') 
+wind$Date <- as.Date(wind$Date)
+wind <- wind[,2:3]
+```
+
+
+```{r}
 lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
 
 kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
@@ -184,6 +191,12 @@ levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
           main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))+    layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))
 ```
 ```{r}
+pres_cyc.cl.1 <- c()
+pres_cyc.cl.2 <- c()
+pres_cyc.cl.3 <- c()
+pres_cyc.cl.4 <- c()
+pres_cyc.cl.5 <- c()
+
 idx.cl1 <- match(cyclones.cl.1$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.1$Date, pres_cyc$Date))]
 idx.cl2 <- match(cyclones.cl.2$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.2$Date, pres_cyc$Date))]
 idx.cl3 <- match(cyclones.cl.3$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.3$Date, pres_cyc$Date))]
@@ -236,7 +249,65 @@ data$Z <- as.vector(t(matrix(c(cluster_pres1,cluster_pres2,cluster_pres3,cluster
 levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
           main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))
 ```
+```{r}
+wind.cl.1 <- c()
+wind.cl.2 <- c()
+wind.cl.3 <- c()
+wind.cl.4 <- c()
+wind.cl.5 <- c()
 
+idx.cl1 <- match(cyclones.cl.1$Date, wind$Date)[!is.na(match(cyclones.cl.1$Date, wind$Date))]
+idx.cl2 <- match(cyclones.cl.2$Date, wind$Date)[!is.na(match(cyclones.cl.2$Date, wind$Date))]
+idx.cl3 <- match(cyclones.cl.3$Date, wind$Date)[!is.na(match(cyclones.cl.3$Date, wind$Date))]
+idx.cl4 <- match(cyclones.cl.4$Date, wind$Date)[!is.na(match(cyclones.cl.4$Date, wind$Date))]
+idx.cl5 <- match(cyclones.cl.5$Date, wind$Date)[!is.na(match(cyclones.cl.5$Date, wind$Date))]
+wind.cl.1$sustained_wind <- wind$sustained_wind[idx.cl1]
+wind.cl.2$sustained_wind <- wind$sustained_wind[idx.cl2]
+wind.cl.3$sustained_wind <- wind$sustained_wind[idx.cl3]
+wind.cl.4$sustained_wind <- wind$sustained_wind[idx.cl4]
+wind.cl.5$sustained_wind <- wind$sustained_wind[idx.cl5]
+
+wind.cl.1$Date <- wind$Date[idx.cl1]
+wind.cl.2$Date <- wind$Date[idx.cl2]
+wind.cl.3$Date <- wind$Date[idx.cl3]
+wind.cl.4$Date <- wind$Date[idx.cl4]
+wind.cl.5$Date <- wind$Date[idx.cl5]
+
+boxplot(c(wind.cl.1$sustained_wind , wind.cl.2$sustained_wind , wind.cl.3$sustained_wind , wind.cl.4$sustained_wind , wind.cl.5$sustained_wind )~ c(rep("1", length(wind.cl.1$sustained_wind )),rep("2", length(wind.cl.2$sustained_wind )),rep("3", length(wind.cl.3$sustained_wind )),rep("4", length(wind.cl.4$sustained_wind )),rep("5", length(wind.cl.5$sustained_wind ))), main = "Mean sustained winds for each cluster", xlab = "Cluster", ylab = "Min Pressure (mb)")
+```
+```{r}
+paste(length(wind.cl.1$sustained_wind),length(wind.cl.2$sustained_wind),length(wind.cl.3$sustained_wind),length(wind.cl.4$sustained_wind),length(wind.cl.5$sustained_wind))
+```
+```{r}
+cluster_wind1 <- c()
+cluster_wind2 <- c()
+cluster_wind3 <- c()
+cluster_wind4 <- c()
+cluster_wind5 <- c()
+for (i in c(1:12)) {
+
+  idx <- which(as.integer(format(wind.cl.1$Date, '%m')) == i)
+  cluster_wind1 <- c(cluster_wind1,mean(wind.cl.1$sustained_wind[idx]))
+  idx <- which(as.integer(format(wind.cl.2$Date, '%m')) == i)
+  cluster_wind2 <- c(cluster_wind2,mean(wind.cl.2$sustained_wind[idx]))
+  idx <- which(as.integer(format(wind.cl.3$Date, '%m')) == i)
+  cluster_wind3 <- c(cluster_wind3,mean(wind.cl.3$sustained_wind[idx]))
+  idx <- which(as.integer(format(wind.cl.4$Date, '%m')) == i)
+  cluster_wind4 <- c(cluster_wind4,mean(wind.cl.4$sustained_wind[idx]))
+  idx <- which(as.integer(format(wind.cl.5$Date, '%m')) == i)
+  cluster_wind5 <- c(cluster_wind5,mean(wind.cl.5$sustained_wind[idx]))
+}
+```
+
+```{r}
+x <- seq(1,5)
+y <- seq(1,12)
+data <- expand.grid(X=x, Y=y)
+data$Z <- as.vector(t(matrix(c(cluster_wind1,cluster_wind2,cluster_wind3,cluster_wind4,cluster_wind5), nrow = 12,ncol = 5)))
+
+levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
+          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))
+```
 ```{r}
 b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel5$cluster, main = "Precipitation Data for each cluster")
 ```
