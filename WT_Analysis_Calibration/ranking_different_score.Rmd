@@ -287,40 +287,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -390,40 +390,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -573,40 +573,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -676,40 +676,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -717,7 +717,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st1.wt2.triple <- scores
 ```
@@ -860,40 +859,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -963,40 +962,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -1004,7 +1003,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st1.wt3.triple <- scores
 ```
@@ -1146,40 +1144,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -1249,40 +1247,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -1290,7 +1288,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st1.wt4.triple <- scores
 ```
@@ -1432,40 +1429,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -1535,40 +1532,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -1767,40 +1764,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -1870,40 +1867,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -1911,7 +1908,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st2.wt1.triple <- scores
 ```
@@ -2052,40 +2048,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -2155,40 +2151,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -2338,40 +2334,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -2441,40 +2437,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -2624,40 +2620,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -2727,40 +2723,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -2910,40 +2906,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -3013,40 +3009,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -3245,40 +3241,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -3348,40 +3344,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -3530,40 +3526,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -3633,40 +3629,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -3674,7 +3670,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st3.wt2.triple <- scores
 ```
@@ -3816,40 +3811,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -3919,40 +3914,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -4102,40 +4097,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -4205,40 +4200,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -4246,7 +4241,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st3.wt4.triple <- scores
 ```
@@ -4388,40 +4382,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -4491,40 +4485,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -4532,7 +4526,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st3.wt5.triple <- scores
 ```
@@ -4722,40 +4715,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -4825,40 +4818,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -5007,40 +5000,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -5110,40 +5103,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -5293,40 +5286,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -5396,40 +5389,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -5437,7 +5430,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st4.wt3.triple <- scores
 ```
@@ -5579,40 +5571,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -5682,40 +5674,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -5723,7 +5715,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st4.wt4.triple <- scores
 ```
@@ -5865,40 +5856,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -5968,40 +5959,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -6009,7 +6000,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st4.wt5.triple <- scores
 ```
@@ -6200,40 +6190,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -6303,40 +6293,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -6344,7 +6334,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st5.wt1.triple <- scores
 ```
@@ -6485,40 +6474,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -6588,40 +6577,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -6629,7 +6618,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st5.wt2.triple <- scores
 ```
@@ -6771,40 +6759,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -6874,40 +6862,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -7059,40 +7047,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -7162,40 +7150,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -7203,7 +7191,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st5.wt4.triple <- scores
 ```
@@ -7345,40 +7332,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -7448,40 +7435,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -7489,7 +7476,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st5.wt5.triple <- scores
 ```
@@ -7680,40 +7666,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -7783,40 +7769,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -7965,40 +7951,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -8068,40 +8054,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -8251,40 +8237,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -8354,40 +8340,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -8395,7 +8381,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st6.wt3.triple <- scores
 ```
@@ -8537,40 +8522,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -8640,40 +8625,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -8681,7 +8666,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st6.wt4.triple <- scores
 ```
@@ -8823,40 +8807,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -8926,40 +8910,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -9157,40 +9141,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -9260,40 +9244,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -9301,7 +9285,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st7.wt1.triple <- scores
 ```
@@ -9442,40 +9425,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -9545,40 +9528,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -9586,7 +9569,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st7.wt2.triple <- scores
 ```
@@ -9728,40 +9710,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -9831,40 +9813,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -9872,7 +9854,6 @@ score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
 scores <- c(score.trmm,score.era5, score.pqm, score.eqm, score.gpqm, score.gpqm2)
 names(scores) <- c("TRMM","ERA5","PQM-WT1","EQM-WT1","GPQM-WT1","GPQM2-WT1")
 scores <- sort(scores, decreasing = T)
-
 
 scores.st7.wt3.triple <- scores
 ```
@@ -10014,40 +9995,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -10117,40 +10098,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -10300,40 +10281,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[3:9]))/16
+score.trmm <- (sum(score.trmm[1:2])+2*sum(score.trmm[7:9]))/12
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[3:9]))/16
+score.era5 <- (sum(score.era5[1:2])+2*sum(score.era5[7:9]))/12
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[3:9]))/16
+score.pqm <- (sum(score.pqm[1:2])+2*sum(score.pqm[7:9]))/12
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[3:9]))/16
+score.eqm <- (sum(score.eqm[1:2])+2*sum(score.eqm[7:9]))/12
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[3:9]))/16
+score.gpqm <- (sum(score.gpqm[1:2])+2*sum(score.gpqm[7:9]))/12
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[3:9]))/16
+score.gpqm2 <- (sum(score.gpqm2[1:2])+2*sum(score.gpqm2[7:9]))/12
 
 
 
@@ -10403,40 +10384,40 @@ score.trmm <- c()
 for (i in c(1:9)) {
   score.trmm <- c(score.trmm, norm.vector[[i]][1]) 
 }
-score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[3:9]))/23
+score.trmm <- (sum(score.trmm[1:2])+3*sum(score.trmm[7:9]))/15
 
 score.era5 <- c()
 for (i in c(1:9)) {
   score.era5 <- c(score.era5, norm.vector[[i]][2]) 
 }
-score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[3:9]))/23
+score.era5 <- (sum(score.era5[1:2])+3*sum(score.era5[7:9]))/15
 
 score.pqm <- c()
 for (i in c(1:9)) {
   score.pqm <- c(score.pqm, norm.vector[[i]][3]) 
 }
-score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[3:9]))/23
+score.pqm <- (sum(score.pqm[1:2])+3*sum(score.pqm[7:9]))/15
 
 
 score.eqm <- c()
 for (i in c(1:9)) {
   score.eqm <- c(score.eqm, norm.vector[[i]][4]) 
 }
-score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[3:9]))/23
+score.eqm <- (sum(score.eqm[1:2])+3*sum(score.eqm[7:9]))/15
 
 
 score.gpqm <- c()
 for (i in c(1:9)) {
   score.gpqm <- c(score.gpqm, norm.vector[[i]][5]) 
 }
-score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[3:9]))/23
+score.gpqm <- (sum(score.gpqm[1:2])+3*sum(score.gpqm[7:9]))/15
 
 
 score.gpqm2 <- c()
 for (i in c(1:9)) {
   score.gpqm2 <- c(score.gpqm2, norm.vector[[i]][6]) 
 }
-score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[3:9]))/23
+score.gpqm2 <- (sum(score.gpqm2[1:2])+3*sum(score.gpqm2[7:9]))/15
 
 
 
@@ -10455,7 +10436,7 @@ scores.st7.wt5.triple <- scores
 
 #### Equal weights
 ```{r}
-df.wt1 <- data.frame(c(scores.st1.wt1, scores.st2.wt1,scores.st3.wt1, scores.st4.wt1, scores.st5.wt1,scores.st6.wt1,scores.st7.wt1), c(names(scores.st1.wt1), names(scores.st2.wt1), names(scores.st3.wt1), names(scores.st4.wt1), names(scores.st5.wt1), names(scores.st6.wt1), names(scores.st7.wt1)))
+df.wt1 <- data.frame(c(scores.st1.wt1.mean, scores.st2.wt1.mean,scores.st3.wt1.mean, scores.st4.wt1.mean, scores.st5.wt1.mean,scores.st6.wt1.mean,scores.st7.wt1.mean), c(names(scores.st1.wt1.mean), names(scores.st2.wt1.mean), names(scores.st3.wt1.mean), names(scores.st4.wt1.mean), names(scores.st5.wt1.mean), names(scores.st6.wt1.mean), names(scores.st7.wt1.mean)))
 colnames(df.wt1) <- c("Score_Value","Method")
 df.wt1.filtered <- df.wt1[which(df.wt1$Method != "ERA5" & df.wt1$Method != "TRMM"),]
 df.wt1.filtered
@@ -10561,7 +10542,7 @@ ggplot() +
 
 #### Equal weights
 ```{r}
-df.wt2 <- data.frame(c(scores.st1.wt2, scores.st2.wt2,scores.st3.wt2, scores.st4.wt2, scores.st5.wt2,scores.st6.wt2,scores.st7.wt2), c(names(scores.st1.wt2), names(scores.st2.wt2), names(scores.st3.wt2), names(scores.st4.wt2), names(scores.st5.wt2), names(scores.st6.wt2), names(scores.st7.wt2)))
+df.wt2 <- data.frame(c(scores.st1.wt2.mean, scores.st2.wt2.mean,scores.st3.wt2.mean, scores.st4.wt2.mean, scores.st5.wt2.mean,scores.st6.wt2.mean,scores.st7.wt2.mean), c(names(scores.st1.wt2.mean), names(scores.st2.wt2.mean), names(scores.st3.wt2.mean), names(scores.st4.wt2.mean), names(scores.st5.wt2.mean), names(scores.st6.wt2.mean), names(scores.st7.wt2.mean)))
 colnames(df.wt2) <- c("Score_Value","Method")
 df.wt2.filtered <- df.wt2[which(df.wt2$Method != "ERA5" & df.wt2$Method != "TRMM"),]
 df.wt2.filtered
@@ -10667,7 +10648,7 @@ ggplot() +
 
 #### Equal weights
 ```{r}
-df.wt3 <- data.frame(c(scores.st1.wt3, scores.st2.wt3,scores.st3.wt3, scores.st4.wt3, scores.st5.wt3,scores.st6.wt3,scores.st7.wt3), c(names(scores.st1.wt3), names(scores.st2.wt3), names(scores.st3.wt3), names(scores.st4.wt3), names(scores.st5.wt3), names(scores.st6.wt3), names(scores.st7.wt3)))
+df.wt3 <- data.frame(c(scores.st1.wt3.mean, scores.st2.wt3.mean,scores.st3.wt3.mean, scores.st4.wt3.mean, scores.st5.wt3.mean,scores.st6.wt3.mean,scores.st7.wt3.mean), c(names(scores.st1.wt3.mean), names(scores.st2.wt3.mean), names(scores.st3.wt3.mean), names(scores.st4.wt3.mean), names(scores.st5.wt3.mean), names(scores.st6.wt3.mean), names(scores.st7.wt3.mean)))
 colnames(df.wt3) <- c("Score_Value","Method")
 df.wt3.filtered <- df.wt3[which(df.wt3$Method != "ERA5" & df.wt3$Method != "TRMM"),]
 df.wt3.filtered
@@ -10773,7 +10754,7 @@ ggplot() +
 
 #### Equal weights
 ```{r}
-df.wt4 <- data.frame(c(scores.st1.wt4, scores.st2.wt4,scores.st3.wt4, scores.st4.wt4, scores.st5.wt4,scores.st6.wt4,scores.st7.wt4), c(names(scores.st1.wt4), names(scores.st2.wt4), names(scores.st3.wt4), names(scores.st4.wt4), names(scores.st5.wt4), names(scores.st6.wt4), names(scores.st7.wt4)))
+df.wt4 <- data.frame(c(scores.st1.wt4.mean, scores.st2.wt4.mean,scores.st3.wt4.mean, scores.st4.wt4.mean, scores.st5.wt4.mean,scores.st6.wt4.mean,scores.st7.wt4.mean), c(names(scores.st1.wt4.mean), names(scores.st2.wt4.mean), names(scores.st3.wt4.mean), names(scores.st4.wt4.mean), names(scores.st5.wt4.mean), names(scores.st6.wt4.mean), names(scores.st7.wt4.mean)))
 colnames(df.wt4) <- c("Score_Value","Method")
 df.wt4.filtered <- df.wt4[which(df.wt4$Method != "ERA5" & df.wt4$Method != "TRMM"),]
 df.wt4.filtered
@@ -10878,7 +10859,7 @@ ggplot() +
 
 #### Equal weights
 ```{r}
-df.wt5 <- data.frame(c(scores.st1.wt5, scores.st2.wt5,scores.st3.wt5, scores.st4.wt5, scores.st5.wt5,scores.st6.wt5,scores.st7.wt5), c(names(scores.st1.wt5), names(scores.st2.wt5), names(scores.st3.wt5), names(scores.st4.wt5), names(scores.st5.wt5), names(scores.st6.wt5), names(scores.st7.wt5)))
+df.wt5 <- data.frame(c(scores.st1.wt5.mean, scores.st2.wt5.mean,scores.st3.wt5.mean, scores.st4.wt5.mean, scores.st5.wt5.mean,scores.st6.wt5.mean,scores.st7.wt5.mean), c(names(scores.st1.wt5.mean), names(scores.st2.wt5.mean), names(scores.st3.wt5.mean), names(scores.st4.wt5.mean), names(scores.st5.wt5.mean), names(scores.st6.wt5.mean), names(scores.st7.wt5.mean)))
 colnames(df.wt5) <- c("Score_Value","Method")
 df.wt5.filtered <- df.wt5[which(df.wt5$Method != "ERA5" & df.wt5$Method != "TRMM"),]
 df.wt5.filtered
