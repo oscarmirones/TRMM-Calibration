@@ -30,6 +30,7 @@ library(ggplot2)
 library(raster)
 library(rasterVis)
 library(sp)
+library(grid)
 ```
 
 
@@ -73,13 +74,16 @@ kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
 
 spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
 ```
-
 ```{r}
 cl1 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 1))
 cl2 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 2))
 cl3 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 3))
 cl4 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 4))
 cl5 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+```{r}
+
 
 cyclones.cl.1 <- cyclones[which(kmModel5$cluster ==1 ),]
 cyclones.cl.2 <- cyclones[which(kmModel5$cluster ==2 ),]
@@ -125,17 +129,256 @@ data$Z <- as.vector(t(matrix(c(cluster1,cluster2,cluster3,cluster4,cluster5), nr
 
 cyc.data <- expand.grid(X=x, Y=y)
 cyc.data$Z <- as.vector(t(matrix(c(cyc.cluster1,cyc.cluster2,cyc.cluster3,cyc.cluster4,cyc.cluster5), nrow = 12,ncol = 5)))
-levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))
+levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
+          main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))
+grid.text("N Obs", .94, .13)
+```
+```{r}
+coordinates(cyc.data) <- ~Y+X
+```
+
+
+```{r}
+levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
+          main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))+
+  layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))+
+  layer(panel.segments(10.5,1.5,12.5,1.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(10.5,0.5,10.5,1.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(10.5,0.5,12.5,0.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.5,1.5,5.5,1.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(5.5,0.5,5.5,1.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.5,0.5,5.5,0.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(10.5,2.5,12.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(10.5,1.5,10.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.5,2.5,6.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(6.5,1.5,6.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(5.5,1.5,6.5,1.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(3.5,3.5,10.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(6.5,2.5,10.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,2.5,3.5,2.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(10.5,2.5,10.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,2.5,3.5,3.5, col = 'blue', lwd = 2))+
+  
+  
+  layer(panel.segments(0.5,4.5,3.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.5,3.5,3.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,3.5,3.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(11.5,3.5,12.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(11.5,4.5,12.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(11.5,3.5,11.5,4.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(4.5,4.5,10.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,5.49,10.5,5.49, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,4.5,4.5,5.49, col = 'blue', lwd = 2))+
+  layer(panel.segments(10.5,4.5,10.5,5.49, col = 'blue', lwd = 2))
+
+
+ 
+  
 grid.text("N Obs", .94, .13)
 ```
 
 ```{r}
 coordinates(cyc.data) <- ~X+Y
 levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))+    layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))
+          main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))+          layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))+
+  layer(panel.segments(0,5.5,1.5,5.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0,10.5,1.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(1.5,0,1.5,5.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(1.5,10.5,1.5,12.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.51,10.5,0.51,12.45, col = 'blue', lwd = 2))+
+  layer(panel.segments(0.51,0.5,0.51,5.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(1.5,6.5,2.5,6.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(1.5,10.5,2.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(2.5,0,2.5,6.5,col = 'blue', lwd = 2))+
+  layer(panel.segments(1.5,5.5,1.5,6.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(2.5,10.5,2.5,12.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(2.5,3.5,3.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(2.5,10.5,3.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,3.5,3.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(2.5,6.5,2.5,10.5, col = 'blue', lwd = 2))+
+  
+  layer(panel.segments(3.5,11.5,4.5,11.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,3.5,4.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,0,3.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,0,4.5,3.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,11.5,3.5,12.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,11.5,4.5,12.5, col = 'blue', lwd = 2))+
+
+  layer(panel.segments(4.5,4.5,5.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,10.5,5.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(4.5,4.5,4.5,10.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(5.5,4.5,5.5,10.5, col = 'blue', lwd = 2))
 grid.text("N Obs", .94, .13)
 ```
+
+
+
+
+```{r}
+getWTSeason <- function(cluster, threshold){
+  lista <- list()
+  pp.season <- c()
+  for (i in c(1:12)) {
+    lista[[length(lista)+1]] <- subsetSeason(cluster, season = i)
+    pp.season <- c(pp.season, sum(lista[[i]]$Data))
+  }
+
+  names(pp.season) <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+  
+  pp.season <- sort(pp.season, decreasing = TRUE)
+  idx <- which((cumsum(pp.season)/sum(pp.season)) >= threshold)[1]
+  pp.season[(idx+1):12] <- 0
+  pp.season[1:idx] <- pp.season[1:idx]/sum(pp.season[1:idx])
+  
+  return(pp.season)
+}
+```
+
+```{r}
+pp.season.cl1 <- getWTSeason(cl1, .8)
+
+barplot(pp.season.cl1, names.arg = names(pp.season.cl1), col = 'blue', 
+        main = "Normalized precipitation in each month in Cl1")
+```
+```{r}
+seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ordered.seasons <- c()
+for (i in c(1:length(which(pp.season.cl1 > 0)))) {
+  ordered.seasons <- c(ordered.seasons, which(names(which(pp.season.cl1 > 0))[i] == seasons) ) 
+}
+
+ordered.seasons <- sort(ordered.seasons)
+
+if (length(which(diff(ordered.seasons) > 1)) > 0) {
+  id.start <- ordered.seasons[which(diff(ordered.seasons) > 1)+1]
+  id.end <- ordered.seasons[which(diff(ordered.seasons) > 1)]
+
+  paste("Season starts in ", seasons[id.start],"and finishes in", seasons[id.end])
+}else{
+  paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
+}
+```
+
+```{r}
+pp.season.cl2 <- getWTSeason(cl2, .8)
+
+barplot(pp.season.cl2, names.arg = names(pp.season.cl1), col = 'blue', 
+        main = "Normalized precipitation in each month in Cl2")
+```
+
+```{r}
+seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ordered.seasons <- c()
+for (i in c(1:length(which(pp.season.cl2 > 0)))) {
+  ordered.seasons <- c(ordered.seasons, which(names(which(pp.season.cl2 > 0))[i] == seasons) ) 
+}
+
+ordered.seasons <- sort(ordered.seasons)
+
+if (length(which(diff(ordered.seasons) > 1)) > 0) {
+  id.start <- ordered.seasons[which(diff(ordered.seasons) > 1)+1]
+  id.end <- ordered.seasons[which(diff(ordered.seasons) > 1)]
+
+  paste("Season starts in ", seasons[id.start],"and finishes in", seasons[id.end])
+}else{
+  paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
+}
+```
+
+```{r}
+pp.season.cl3 <- getWTSeason(cl3, .8)
+
+barplot(pp.season.cl3, names.arg = names(pp.season.cl3), col = 'blue', 
+        main = "Normalized precipitation in each month in Cl3")
+```
+
+```{r}
+seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ordered.seasons <- c()
+for (i in c(1:length(which(pp.season.cl3 > 0)))) {
+  ordered.seasons <- c(ordered.seasons, which(names(which(pp.season.cl3 > 0))[i] == seasons) ) 
+}
+
+ordered.seasons <- sort(ordered.seasons)
+
+if (length(which(diff(ordered.seasons) > 1)) > 0) {
+  id.start <- ordered.seasons[which(diff(ordered.seasons) > 1)+1]
+  id.end <- ordered.seasons[which(diff(ordered.seasons) > 1)]
+
+  paste("Season starts in ", seasons[id.start],"and finishes in", seasons[id.end])
+}else{
+  paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
+}
+
+```
+```{r}
+pp.season.cl4 <- getWTSeason(cl4, .8)
+
+barplot(pp.season.cl4, names.arg = names(pp.season.cl4), col = 'blue', 
+        main = "Normalized precipitation in each month in Cl4")
+```
+```{r}
+seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ordered.seasons <- c()
+for (i in c(1:length(which(pp.season.cl4 > 0)))) {
+  ordered.seasons <- c(ordered.seasons, which(names(which(pp.season.cl4 > 0))[i] == seasons) ) 
+}
+
+ordered.seasons <- sort(ordered.seasons)
+
+if (length(which(diff(ordered.seasons) > 1)) > 0) {
+  id.start <- ordered.seasons[which(diff(ordered.seasons) > 1)+1]
+  id.end <- ordered.seasons[which(diff(ordered.seasons) > 1)]
+
+  paste("Season starts in ", seasons[id.start],"and finishes in", seasons[id.end])
+}else{
+  paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
+}
+```
+
+
+```{r}
+pp.season.cl5 <- getWTSeason(cl5, .8)
+
+barplot(pp.season.cl5, names.arg = names(pp.season.cl5), col = 'blue', 
+        main = "Normalized precipitation in each month in Cl5")
+```
+```{r}
+seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ordered.seasons <- c()
+for (i in c(1:length(which(pp.season.cl5 > 0)))) {
+  ordered.seasons <- c(ordered.seasons, which(names(which(pp.season.cl5 > 0))[i] == seasons) ) 
+}
+
+ordered.seasons <- sort(ordered.seasons)
+
+if (length(which(diff(ordered.seasons) > 1)) > 0) {
+  id.start <- ordered.seasons[which(diff(ordered.seasons) > 1)+1]
+  id.end <- ordered.seasons[which(diff(ordered.seasons) > 1)]
+
+  paste("Season starts in ", seasons[id.start],"and finishes in", seasons[id.end])
+}else{
+  paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
+}
+```
+
+
+
+
+
+
+
+
 
 ```{r}
 pres_cyc.cl.1 <- c()
@@ -196,8 +439,8 @@ y <- seq(1,12)
 data <- expand.grid(X=x, Y=y)
 data$Z <- as.vector(t(matrix(c(cluster_pres1,cluster_pres2,cluster_pres3,cluster_pres4,cluster_pres5), nrow = 12,ncol = 5)))
 
-levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))
+levelplot(Z ~ Y*X, data=data  ,xlab="WT", ylab = "Month",
+          main="", col.regions = rev(hcl.colors(100,palette = 'BuPu')))
 grid.text("Min pressure", .94, .13)
 ```
 
@@ -253,8 +496,8 @@ y <- seq(1,12)
 data <- expand.grid(X=x, Y=y)
 data$Z <- as.vector(t(matrix(c(cluster_wind1,cluster_wind2,cluster_wind3,cluster_wind4,cluster_wind5), nrow = 12,ncol = 5)))
 
-levelplot(Z ~ X*Y, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'inferno')))
+levelplot(Z ~ Y*X, data=data  ,xlab="WT", ylab = "Month",
+          main="", col.regions = rev(hcl.colors(100,palette = 'YlGnBu')))
 grid.text("MSWS", .94, .13)
 ```
 

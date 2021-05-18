@@ -1,0 +1,4275 @@
+---
+title: "Method ranking comparison"
+author: "Óscar Mirones Alonso"
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+    toc_depth: 5
+---
+
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(downscaleR)
+library(visualizeR)
+library(convertR)
+library(ncdf4)
+library(climate4R.value)
+library(magrittr)
+library(evd)
+library(formattable) #neccessary to create tables with colors
+library(lubridate) #neccessary to calculate differences in years between dates
+library(lattice)
+library(ggplot2)
+
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+}else{
+  dir <- "/vols/abedul/meteo/mironeso/trmm"
+}
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = dir)
+```
+
+# Stations' computation
+```{r}
+set.seed(42)
+
+load("pca.RData")
+load("pp_reanalysis.RData")
+idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
+idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
+idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
+
+pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+
+k = 5
+load('C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData')
+
+precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+```
+
+```{r}
+precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+kmModel5$cluster <- kmModel5$cluster[1:8034]
+
+```
+
+```{r}
+MaxReturnValue <- function(data){
+  #library(lubridate)
+  #nyears <- round(time_length(difftime(cal.madrid.eqm$Dates$end[length(cal.madrid.eqm$Dates$end)], cal.madrid.eqm$Dates$start[1]),"years"))
+  nyears <- 20
+  data.maxYear <- aggregateGrid(redim(data), aggr.y = list(FUN = "max",na.rm = TRUE))
+
+  data.maxrv <- climatology(data, clim.fun = list(FUN = "mean", na.rm = T))
+
+  auxData <- data.maxYear$Data
+  auxData[which(is.infinite(auxData))] <- NA
+
+  if (any(!is.na(auxData))){
+      auxGEV <- fgev(auxData)
+      if ((auxGEV$estimate[3] - auxGEV$std.err[3] < 0) & (0  < auxGEV$estimate[3] + auxGEV$std.err[3])){
+        auxGEV <- fgev(auxData, shape = 0)
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = 0)
+      }else{
+        auxRV <- qgev(1-1/nyears, loc = auxGEV$estimate[1], scale = auxGEV$estimate[2], shape = auxGEV$estimate[3])
+      }
+      data.maxrv <- as.numeric(auxRV)
+      names(data.maxrv) <- paste("RV",nyears,"_max", sep = "")
+  }
+  return(data.maxrv)
+  }
+```
+
+
+```{r}
+pp_reanalysis <- subsetGrid(pp_reanalysis, years = 1998:2019)
+```
+
+```{r}
+normalization <- function(measure){
+  measure.norm <- c()
+  #measure must be a vector with the value of a certain measure of different calibrations
+  for (i in c(1:length(measure))) {
+    measure.norm <- c(measure.norm, 1-((measure[i]-min(measure))/(max(measure)-min(measure))))
+  }
+  return(measure.norm)
+}
+```
+
+
+## Wallis and Futuna
+```{r}
+i=1
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- (sum(score.eqm.st1[1:6])+3*sum(score.eqm.st1[7:9]))/15
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st1 <- (sum(score.eqm.conditioned.st1[1:6])+3*sum(score.eqm.conditioned.st1[7:9]))/15
+
+score.eqm.conditioned.st1.triple <- score.eqm.conditioned.st1
+score.eqm.st1.triple <- score.eqm.st1
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- (sum(score.eqm.st1[1:6])+2*sum(score.eqm.st1[7:9]))/12
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st1 <- (sum(score.eqm.conditioned.st1[1:6])+2*sum(score.eqm.conditioned.st1[7:9]))/12
+
+score.eqm.conditioned.st1.double <- score.eqm.conditioned.st1
+score.eqm.st1.double <- score.eqm.st1
+```
+
+```{r}
+score.eqm.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.st1 <- c(score.eqm.st1, norm.vector[[i]][1]) 
+}
+score.eqm.st1 <- mean(score.eqm.st1)
+
+score.eqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st1 <- c(score.eqm.conditioned.st1, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st1<- mean(score.eqm.conditioned.st1) 
+
+score.eqm.conditioned.st1.mean <- score.eqm.conditioned.st1
+score.eqm.st1.mean <- score.eqm.st1
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.st1 <- c(score.pqm.st1, norm.vector[[i]][2]) 
+}
+score.pqm.st1 <- (sum(score.pqm.st1[1:6])+3*sum(score.pqm.st1[7:9]))/15
+
+score.pqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st1 <- c(score.pqm.conditioned.st1, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st1 <- (sum(score.pqm.conditioned.st1[1:6])+3*sum(score.pqm.conditioned.st1[7:9]))/15
+
+score.pqm.conditioned.st1.triple <- score.pqm.conditioned.st1
+score.pqm.st1.triple <- score.pqm.st1
+```
+
+```{r}
+score.pqm.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.st1 <- c(score.pqm.st1, norm.vector[[i]][2]) 
+}
+score.pqm.st1 <- (sum(score.pqm.st1[1:6])+2*sum(score.pqm.st1[7:9]))/12
+
+score.pqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st1 <- c(score.pqm.conditioned.st1, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st1 <- (sum(score.pqm.conditioned.st1[1:6])+2*sum(score.pqm.conditioned.st1[7:9]))/12
+
+score.pqm.conditioned.st1.double <- score.pqm.conditioned.st1
+score.pqm.st1.double <- score.pqm.st1
+```
+
+```{r}
+score.pqm.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.st1 <- c(score.pqm.st1, norm.vector[[i]][2]) 
+}
+score.pqm.st1 <- mean(score.pqm.st1)
+
+score.pqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st1 <- c(score.pqm.conditioned.st1, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st1<- mean(score.pqm.conditioned.st1) 
+
+score.pqm.conditioned.st1.mean <- score.pqm.conditioned.st1
+score.pqm.st1.mean <- score.pqm.st1
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st1 <- c(score.gpqm.st1, norm.vector[[i]][3]) 
+}
+score.gpqm.st1 <- (sum(score.gpqm.st1[1:6])+3*sum(score.gpqm.st1[7:9]))/15
+
+score.gpqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st1 <- c(score.gpqm.conditioned.st1, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st1 <- (sum(score.gpqm.conditioned.st1[1:6])+3*sum(score.gpqm.conditioned.st1[7:9]))/15
+
+score.gpqm.conditioned.st1.triple <- score.gpqm.conditioned.st1
+score.gpqm.st1.triple <- score.gpqm.st1
+```
+
+```{r}
+score.gpqm.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st1 <- c(score.gpqm.st1, norm.vector[[i]][3]) 
+}
+score.gpqm.st1 <- (sum(score.gpqm.st1[1:6])+2*sum(score.gpqm.st1[7:9]))/12
+
+score.gpqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st1 <- c(score.gpqm.conditioned.st1, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st1 <- (sum(score.gpqm.conditioned.st1[1:6])+2*sum(score.gpqm.conditioned.st1[7:9]))/12
+
+score.gpqm.conditioned.st1.double <- score.gpqm.conditioned.st1
+score.gpqm.st1.double <- score.gpqm.st1
+```
+
+```{r}
+score.gpqm.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st1 <- c(score.gpqm.st1, norm.vector[[i]][3]) 
+}
+score.gpqm.st1 <- mean(score.gpqm.st1)
+
+score.gpqm.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st1 <- c(score.gpqm.conditioned.st1, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st1<- mean(score.gpqm.conditioned.st1) 
+
+score.gpqm.conditioned.st1.mean <- score.gpqm.conditioned.st1
+score.gpqm.st1.mean <- score.gpqm.st1
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st1 <- c(score.gpqm2.st1, norm.vector[[i]][4]) 
+}
+score.gpqm2.st1 <- (sum(score.gpqm2.st1[1:6])+3*sum(score.gpqm2.st1[7:9]))/15
+
+score.gpqm2.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st1 <- c(score.gpqm2.conditioned.st1, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st1 <- (sum(score.gpqm2.conditioned.st1[1:6])+3*sum(score.gpqm2.conditioned.st1[7:9]))/15
+
+score.gpqm2.conditioned.st1.triple <- score.gpqm2.conditioned.st1
+score.gpqm2.st1.triple <- score.gpqm2.st1
+```
+
+```{r}
+score.gpqm2.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st1 <- c(score.gpqm2.st1, norm.vector[[i]][4]) 
+}
+score.gpqm2.st1 <- (sum(score.gpqm2.st1[1:6])+2*sum(score.gpqm2.st1[7:9]))/12
+
+score.gpqm2.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st1 <- c(score.gpqm2.conditioned.st1, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st1 <- (sum(score.gpqm2.conditioned.st1[1:6])+2*sum(score.gpqm2.conditioned.st1[7:9]))/12
+
+score.gpqm2.conditioned.st1.double <- score.gpqm2.conditioned.st1
+score.gpqm2.st1.double <- score.gpqm2.st1
+```
+
+```{r}
+score.gpqm2.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st1 <- c(score.gpqm2.st1, norm.vector[[i]][4]) 
+}
+score.gpqm2.st1 <- mean(score.gpqm2.st1)
+
+score.gpqm2.conditioned.st1 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st1 <- c(score.gpqm2.conditioned.st1, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st1<- mean(score.gpqm2.conditioned.st1) 
+
+score.gpqm2.conditioned.st1.mean <- score.gpqm2.conditioned.st1
+score.gpqm2.st1.mean <- score.gpqm2.st1
+
+
+####################################################################
+```
+
+
+
+## Alofi, Niue
+```{r}
+i=2
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- (sum(score.eqm.st2[1:6])+3*sum(score.eqm.st2[7:9]))/15
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st2 <- (sum(score.eqm.conditioned.st2[1:6])+3*sum(score.eqm.conditioned.st2[7:9]))/15
+
+score.eqm.conditioned.st2.triple <- score.eqm.conditioned.st2
+score.eqm.st2.triple <- score.eqm.st2
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- (sum(score.eqm.st2[1:6])+2*sum(score.eqm.st2[7:9]))/12
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st2 <- (sum(score.eqm.conditioned.st2[1:6])+2*sum(score.eqm.conditioned.st2[7:9]))/12
+
+score.eqm.conditioned.st2.double <- score.eqm.conditioned.st2
+score.eqm.st2.double <- score.eqm.st2
+```
+
+```{r}
+score.eqm.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.st2 <- c(score.eqm.st2, norm.vector[[i]][1]) 
+}
+score.eqm.st2 <- mean(score.eqm.st2)
+
+score.eqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st2 <- c(score.eqm.conditioned.st2, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st2<- mean(score.eqm.conditioned.st2) 
+
+score.eqm.conditioned.st2.mean <- score.eqm.conditioned.st2
+score.eqm.st2.mean <- score.eqm.st2
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.st2 <- c(score.pqm.st2, norm.vector[[i]][2]) 
+}
+score.pqm.st2 <- (sum(score.pqm.st2[1:6])+3*sum(score.pqm.st2[7:9]))/15
+
+score.pqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st2 <- c(score.pqm.conditioned.st2, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st2 <- (sum(score.pqm.conditioned.st2[1:6])+3*sum(score.pqm.conditioned.st2[7:9]))/15
+
+score.pqm.conditioned.st2.triple <- score.pqm.conditioned.st2
+score.pqm.st2.triple <- score.pqm.st2
+```
+
+```{r}
+score.pqm.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.st2 <- c(score.pqm.st2, norm.vector[[i]][2]) 
+}
+score.pqm.st2 <- (sum(score.pqm.st2[1:6])+2*sum(score.pqm.st2[7:9]))/12
+
+score.pqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st2 <- c(score.pqm.conditioned.st2, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st2 <- (sum(score.pqm.conditioned.st2[1:6])+2*sum(score.pqm.conditioned.st2[7:9]))/12
+
+score.pqm.conditioned.st2.double <- score.pqm.conditioned.st2
+score.pqm.st2.double <- score.pqm.st2
+```
+
+```{r}
+score.pqm.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.st2 <- c(score.pqm.st2, norm.vector[[i]][2]) 
+}
+score.pqm.st2 <- mean(score.pqm.st2)
+
+score.pqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st2 <- c(score.pqm.conditioned.st2, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st2<- mean(score.pqm.conditioned.st2) 
+
+score.pqm.conditioned.st2.mean <- score.pqm.conditioned.st2
+score.pqm.st2.mean <- score.pqm.st2
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st2 <- c(score.gpqm.st2, norm.vector[[i]][3]) 
+}
+score.gpqm.st2 <- (sum(score.gpqm.st2[1:6])+3*sum(score.gpqm.st2[7:9]))/15
+
+score.gpqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st2 <- c(score.gpqm.conditioned.st2, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st2 <- (sum(score.gpqm.conditioned.st2[1:6])+3*sum(score.gpqm.conditioned.st2[7:9]))/15
+
+score.gpqm.conditioned.st2.triple <- score.gpqm.conditioned.st2
+score.gpqm.st2.triple <- score.gpqm.st2
+```
+
+```{r}
+score.gpqm.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st2 <- c(score.gpqm.st2, norm.vector[[i]][3]) 
+}
+score.gpqm.st2 <- (sum(score.gpqm.st2[1:6])+2*sum(score.gpqm.st2[7:9]))/12
+
+score.gpqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st2 <- c(score.gpqm.conditioned.st2, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st2 <- (sum(score.gpqm.conditioned.st2[1:6])+2*sum(score.gpqm.conditioned.st2[7:9]))/12
+
+score.gpqm.conditioned.st2.double <- score.gpqm.conditioned.st2
+score.gpqm.st2.double <- score.gpqm.st2
+```
+
+```{r}
+score.gpqm.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st2 <- c(score.gpqm.st2, norm.vector[[i]][3]) 
+}
+score.gpqm.st2 <- mean(score.gpqm.st2)
+
+score.gpqm.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st2 <- c(score.gpqm.conditioned.st2, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st2<- mean(score.gpqm.conditioned.st2) 
+
+score.gpqm.conditioned.st2.mean <- score.gpqm.conditioned.st2
+score.gpqm.st2.mean <- score.gpqm.st2
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st2 <- c(score.gpqm2.st2, norm.vector[[i]][4]) 
+}
+score.gpqm2.st2 <- (sum(score.gpqm2.st2[1:6])+3*sum(score.gpqm2.st2[7:9]))/15
+
+score.gpqm2.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st2 <- c(score.gpqm2.conditioned.st2, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st2 <- (sum(score.gpqm2.conditioned.st2[1:6])+3*sum(score.gpqm2.conditioned.st2[7:9]))/15
+
+score.gpqm2.conditioned.st2.triple <- score.gpqm2.conditioned.st2
+score.gpqm2.st2.triple <- score.gpqm2.st2
+```
+
+```{r}
+score.gpqm2.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st2 <- c(score.gpqm2.st2, norm.vector[[i]][4]) 
+}
+score.gpqm2.st2 <- (sum(score.gpqm2.st2[1:6])+2*sum(score.gpqm2.st2[7:9]))/12
+
+score.gpqm2.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st2 <- c(score.gpqm2.conditioned.st2, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st2 <- (sum(score.gpqm2.conditioned.st2[1:6])+2*sum(score.gpqm2.conditioned.st2[7:9]))/12
+
+score.gpqm2.conditioned.st2.double <- score.gpqm2.conditioned.st2
+score.gpqm2.st2.double <- score.gpqm2.st2
+```
+
+```{r}
+score.gpqm2.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st2 <- c(score.gpqm2.st2, norm.vector[[i]][4]) 
+}
+score.gpqm2.st2 <- mean(score.gpqm2.st2)
+
+score.gpqm2.conditioned.st2 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st2 <- c(score.gpqm2.conditioned.st2, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st2<- mean(score.gpqm2.conditioned.st2) 
+
+score.gpqm2.conditioned.st2.mean <- score.gpqm2.conditioned.st2
+score.gpqm2.st2.mean <- score.gpqm2.st2
+
+
+####################################################################
+```
+## Rarotonga IA, Cook Island
+```{r}
+i=3
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- (sum(score.eqm.st3[1:6])+3*sum(score.eqm.st3[7:9]))/15
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st3 <- (sum(score.eqm.conditioned.st3[1:6])+3*sum(score.eqm.conditioned.st3[7:9]))/15
+
+score.eqm.conditioned.st3.triple <- score.eqm.conditioned.st3
+score.eqm.st3.triple <- score.eqm.st3
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- (sum(score.eqm.st3[1:6])+2*sum(score.eqm.st3[7:9]))/12
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st3 <- (sum(score.eqm.conditioned.st3[1:6])+2*sum(score.eqm.conditioned.st3[7:9]))/12
+
+score.eqm.conditioned.st3.double <- score.eqm.conditioned.st3
+score.eqm.st3.double <- score.eqm.st3
+```
+
+```{r}
+score.eqm.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.st3 <- c(score.eqm.st3, norm.vector[[i]][1]) 
+}
+score.eqm.st3 <- mean(score.eqm.st3)
+
+score.eqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st3 <- c(score.eqm.conditioned.st3, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st3<- mean(score.eqm.conditioned.st3) 
+
+score.eqm.conditioned.st3.mean <- score.eqm.conditioned.st3
+score.eqm.st3.mean <- score.eqm.st3
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.st3 <- c(score.pqm.st3, norm.vector[[i]][2]) 
+}
+score.pqm.st3 <- (sum(score.pqm.st3[1:6])+3*sum(score.pqm.st3[7:9]))/15
+
+score.pqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st3 <- c(score.pqm.conditioned.st3, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st3 <- (sum(score.pqm.conditioned.st3[1:6])+3*sum(score.pqm.conditioned.st3[7:9]))/15
+
+score.pqm.conditioned.st3.triple <- score.pqm.conditioned.st3
+score.pqm.st3.triple <- score.pqm.st3
+```
+
+```{r}
+score.pqm.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.st3 <- c(score.pqm.st3, norm.vector[[i]][2]) 
+}
+score.pqm.st3 <- (sum(score.pqm.st3[1:6])+2*sum(score.pqm.st3[7:9]))/12
+
+score.pqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st3 <- c(score.pqm.conditioned.st3, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st3 <- (sum(score.pqm.conditioned.st3[1:6])+2*sum(score.pqm.conditioned.st3[7:9]))/12
+
+score.pqm.conditioned.st3.double <- score.pqm.conditioned.st3
+score.pqm.st3.double <- score.pqm.st3
+```
+
+
+
+```{r}
+score.pqm.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.st3 <- c(score.pqm.st3, norm.vector[[i]][2]) 
+}
+score.pqm.st3 <- mean(score.pqm.st3)
+
+score.pqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st3 <- c(score.pqm.conditioned.st3, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st3<- mean(score.pqm.conditioned.st3) 
+
+score.pqm.conditioned.st3.mean <- score.pqm.conditioned.st3
+score.pqm.st3.mean <- score.pqm.st3
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st3 <- c(score.gpqm.st3, norm.vector[[i]][3]) 
+}
+score.gpqm.st3 <- (sum(score.gpqm.st3[1:6])+3*sum(score.gpqm.st3[7:9]))/15
+
+score.gpqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st3 <- c(score.gpqm.conditioned.st3, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st3 <- (sum(score.gpqm.conditioned.st3[1:6])+3*sum(score.gpqm.conditioned.st3[7:9]))/15
+
+score.gpqm.conditioned.st3.triple <- score.gpqm.conditioned.st3
+score.gpqm.st3.triple <- score.gpqm.st3
+```
+
+```{r}
+score.gpqm.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st3 <- c(score.gpqm.st3, norm.vector[[i]][3]) 
+}
+score.gpqm.st3 <- (sum(score.gpqm.st3[1:6])+2*sum(score.gpqm.st3[7:9]))/12
+
+score.gpqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st3 <- c(score.gpqm.conditioned.st3, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st3 <- (sum(score.gpqm.conditioned.st3[1:6])+2*sum(score.gpqm.conditioned.st3[7:9]))/12
+
+score.gpqm.conditioned.st3.double <- score.gpqm.conditioned.st3
+score.gpqm.st3.double <- score.gpqm.st3
+```
+
+```{r}
+score.gpqm.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st3 <- c(score.gpqm.st3, norm.vector[[i]][3]) 
+}
+score.gpqm.st3 <- mean(score.gpqm.st3)
+
+score.gpqm.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st3 <- c(score.gpqm.conditioned.st3, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st3<- mean(score.gpqm.conditioned.st3) 
+
+score.gpqm.conditioned.st3.mean <- score.gpqm.conditioned.st3
+score.gpqm.st3.mean <- score.gpqm.st3
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st3 <- c(score.gpqm2.st3, norm.vector[[i]][4]) 
+}
+score.gpqm2.st3 <- (sum(score.gpqm2.st3[1:6])+3*sum(score.gpqm2.st3[7:9]))/15
+
+score.gpqm2.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st3 <- c(score.gpqm2.conditioned.st3, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st3 <- (sum(score.gpqm2.conditioned.st3[1:6])+3*sum(score.gpqm2.conditioned.st3[7:9]))/15
+
+score.gpqm2.conditioned.st3.triple <- score.gpqm2.conditioned.st3
+score.gpqm2.st3.triple <- score.gpqm2.st3
+```
+
+```{r}
+score.gpqm2.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st3 <- c(score.gpqm2.st3, norm.vector[[i]][4]) 
+}
+score.gpqm2.st3 <- (sum(score.gpqm2.st3[1:6])+2*sum(score.gpqm2.st3[7:9]))/12
+
+score.gpqm2.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st3 <- c(score.gpqm2.conditioned.st3, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st3 <- (sum(score.gpqm2.conditioned.st3[1:6])+2*sum(score.gpqm2.conditioned.st3[7:9]))/12
+
+score.gpqm2.conditioned.st3.double <- score.gpqm2.conditioned.st3
+score.gpqm2.st3.double <- score.gpqm2.st3
+```
+
+```{r}
+score.gpqm2.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st3 <- c(score.gpqm2.st3, norm.vector[[i]][4]) 
+}
+score.gpqm2.st3 <- mean(score.gpqm2.st3)
+
+score.gpqm2.conditioned.st3 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st3 <- c(score.gpqm2.conditioned.st3, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st3<- mean(score.gpqm2.conditioned.st3) 
+
+score.gpqm2.conditioned.st3.mean <- score.gpqm2.conditioned.st3
+score.gpqm2.st3.mean <- score.gpqm2.st3
+
+
+####################################################################
+```
+## Bells Beach, New Zealand
+```{r}
+i=4
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- (sum(score.eqm.st4[1:6])+3*sum(score.eqm.st4[7:9]))/15
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st4 <- (sum(score.eqm.conditioned.st4[1:6])+3*sum(score.eqm.conditioned.st4[7:9]))/15
+
+score.eqm.conditioned.st4.triple <- score.eqm.conditioned.st4
+score.eqm.st4.triple <- score.eqm.st4
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- (sum(score.eqm.st4[1:6])+2*sum(score.eqm.st4[7:9]))/12
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st4 <- (sum(score.eqm.conditioned.st4[1:6])+2*sum(score.eqm.conditioned.st4[7:9]))/12
+
+score.eqm.conditioned.st4.double <- score.eqm.conditioned.st4
+score.eqm.st4.double <- score.eqm.st4
+```
+
+```{r}
+score.eqm.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.st4 <- c(score.eqm.st4, norm.vector[[i]][1]) 
+}
+score.eqm.st4 <- mean(score.eqm.st4)
+
+score.eqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st4 <- c(score.eqm.conditioned.st4, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st4<- mean(score.eqm.conditioned.st4) 
+
+score.eqm.conditioned.st4.mean <- score.eqm.conditioned.st4
+score.eqm.st4.mean <- score.eqm.st4
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.st4 <- c(score.pqm.st4, norm.vector[[i]][2]) 
+}
+score.pqm.st4 <- (sum(score.pqm.st4[1:6])+3*sum(score.pqm.st4[7:9]))/15
+
+score.pqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st4 <- c(score.pqm.conditioned.st4, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st4 <- (sum(score.pqm.conditioned.st4[1:6])+3*sum(score.pqm.conditioned.st4[7:9]))/15
+
+score.pqm.conditioned.st4.triple <- score.pqm.conditioned.st4
+score.pqm.st4.triple <- score.pqm.st4
+```
+
+```{r}
+score.pqm.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.st4 <- c(score.pqm.st4, norm.vector[[i]][2]) 
+}
+score.pqm.st4 <- (sum(score.pqm.st4[1:6])+2*sum(score.pqm.st4[7:9]))/12
+
+score.pqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st4 <- c(score.pqm.conditioned.st4, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st4 <- (sum(score.pqm.conditioned.st4[1:6])+2*sum(score.pqm.conditioned.st4[7:9]))/12
+
+score.pqm.conditioned.st4.double <- score.pqm.conditioned.st4
+score.pqm.st4.double <- score.pqm.st4
+```
+
+```{r}
+score.pqm.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.st4 <- c(score.pqm.st4, norm.vector[[i]][2]) 
+}
+score.pqm.st4 <- mean(score.pqm.st4)
+
+score.pqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st4 <- c(score.pqm.conditioned.st4, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st4<- mean(score.pqm.conditioned.st4) 
+
+score.pqm.conditioned.st4.mean <- score.pqm.conditioned.st4
+score.pqm.st4.mean <- score.pqm.st4
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st4 <- c(score.gpqm.st4, norm.vector[[i]][3]) 
+}
+score.gpqm.st4 <- (sum(score.gpqm.st4[1:6])+3*sum(score.gpqm.st4[7:9]))/15
+
+score.gpqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st4 <- c(score.gpqm.conditioned.st4, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st4 <- (sum(score.gpqm.conditioned.st4[1:6])+3*sum(score.gpqm.conditioned.st4[7:9]))/15
+
+score.gpqm.conditioned.st4.triple <- score.gpqm.conditioned.st4
+score.gpqm.st4.triple <- score.gpqm.st4
+```
+
+```{r}
+score.gpqm.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st4 <- c(score.gpqm.st4, norm.vector[[i]][3]) 
+}
+score.gpqm.st4 <- (sum(score.gpqm.st4[1:6])+2*sum(score.gpqm.st4[7:9]))/12
+
+score.gpqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st4 <- c(score.gpqm.conditioned.st4, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st4 <- (sum(score.gpqm.conditioned.st4[1:6])+2*sum(score.gpqm.conditioned.st4[7:9]))/12
+
+score.gpqm.conditioned.st4.double <- score.gpqm.conditioned.st4
+score.gpqm.st4.double <- score.gpqm.st4
+```
+
+```{r}
+score.gpqm.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st4 <- c(score.gpqm.st4, norm.vector[[i]][3]) 
+}
+score.gpqm.st4 <- mean(score.gpqm.st4)
+
+score.gpqm.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st4 <- c(score.gpqm.conditioned.st4, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st4<- mean(score.gpqm.conditioned.st4) 
+
+score.gpqm.conditioned.st4.mean <- score.gpqm.conditioned.st4
+score.gpqm.st4.mean <- score.gpqm.st4
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st4 <- c(score.gpqm2.st4, norm.vector[[i]][4]) 
+}
+score.gpqm2.st4 <- (sum(score.gpqm2.st4[1:6])+3*sum(score.gpqm2.st4[7:9]))/15
+
+score.gpqm2.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st4 <- c(score.gpqm2.conditioned.st4, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st4 <- (sum(score.gpqm2.conditioned.st4[1:6])+3*sum(score.gpqm2.conditioned.st4[7:9]))/15
+
+score.gpqm2.conditioned.st4.triple <- score.gpqm2.conditioned.st4
+score.gpqm2.st4.triple <- score.gpqm2.st4
+```
+
+```{r}
+score.gpqm2.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st4 <- c(score.gpqm2.st4, norm.vector[[i]][4]) 
+}
+score.gpqm2.st4 <- (sum(score.gpqm2.st4[1:6])+2*sum(score.gpqm2.st4[7:9]))/12
+
+score.gpqm2.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st4 <- c(score.gpqm2.conditioned.st4, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st4 <- (sum(score.gpqm2.conditioned.st4[1:6])+2*sum(score.gpqm2.conditioned.st4[7:9]))/12
+
+score.gpqm2.conditioned.st4.double <- score.gpqm2.conditioned.st4
+score.gpqm2.st4.double <- score.gpqm2.st4
+```
+
+```{r}
+score.gpqm2.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st4 <- c(score.gpqm2.st4, norm.vector[[i]][4]) 
+}
+score.gpqm2.st4 <- mean(score.gpqm2.st4)
+
+score.gpqm2.conditioned.st4 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st4 <- c(score.gpqm2.conditioned.st4, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st4<- mean(score.gpqm2.conditioned.st4) 
+
+score.gpqm2.conditioned.st4.mean <- score.gpqm2.conditioned.st4
+score.gpqm2.st4.mean <- score.gpqm2.st4
+
+
+####################################################################
+```
+
+## ocean buoy?
+```{r}
+i=5
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- (sum(score.eqm.st5[1:6])+3*sum(score.eqm.st5[7:9]))/15
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st5 <- (sum(score.eqm.conditioned.st5[1:6])+3*sum(score.eqm.conditioned.st5[7:9]))/15
+
+score.eqm.conditioned.st5.triple <- score.eqm.conditioned.st5
+score.eqm.st5.triple <- score.eqm.st5
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- (sum(score.eqm.st5[1:6])+2*sum(score.eqm.st5[7:9]))/12
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st5 <- (sum(score.eqm.conditioned.st5[1:6])+2*sum(score.eqm.conditioned.st5[7:9]))/12
+
+score.eqm.conditioned.st5.double <- score.eqm.conditioned.st5
+score.eqm.st5.double <- score.eqm.st5
+```
+
+```{r}
+score.eqm.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.st5 <- c(score.eqm.st5, norm.vector[[i]][1]) 
+}
+score.eqm.st5 <- mean(score.eqm.st5)
+
+score.eqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st5 <- c(score.eqm.conditioned.st5, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st5<- mean(score.eqm.conditioned.st5) 
+
+score.eqm.conditioned.st5.mean <- score.eqm.conditioned.st5
+score.eqm.st5.mean <- score.eqm.st5
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.st5 <- c(score.pqm.st5, norm.vector[[i]][2]) 
+}
+score.pqm.st5 <- (sum(score.pqm.st5[1:6])+3*sum(score.pqm.st5[7:9]))/15
+
+score.pqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st5 <- c(score.pqm.conditioned.st5, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st5 <- (sum(score.pqm.conditioned.st5[1:6])+3*sum(score.pqm.conditioned.st5[7:9]))/15
+
+score.pqm.conditioned.st5.triple <- score.pqm.conditioned.st5
+score.pqm.st5.triple <- score.pqm.st5
+```
+
+```{r}
+score.pqm.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.st5 <- c(score.pqm.st5, norm.vector[[i]][2]) 
+}
+score.pqm.st5 <- (sum(score.pqm.st5[1:6])+2*sum(score.pqm.st5[7:9]))/12
+
+score.pqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st5 <- c(score.pqm.conditioned.st5, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st5 <- (sum(score.pqm.conditioned.st5[1:6])+2*sum(score.pqm.conditioned.st5[7:9]))/12
+
+score.pqm.conditioned.st5.double <- score.pqm.conditioned.st5
+score.pqm.st5.double <- score.pqm.st5
+```
+
+```{r}
+score.pqm.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.st5 <- c(score.pqm.st5, norm.vector[[i]][2]) 
+}
+score.pqm.st5 <- mean(score.pqm.st5)
+
+score.pqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st5 <- c(score.pqm.conditioned.st5, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st5<- mean(score.pqm.conditioned.st5) 
+
+score.pqm.conditioned.st5.mean <- score.pqm.conditioned.st5
+score.pqm.st5.mean <- score.pqm.st5
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st5 <- c(score.gpqm.st5, norm.vector[[i]][3]) 
+}
+score.gpqm.st5 <- (sum(score.gpqm.st5[1:6])+3*sum(score.gpqm.st5[7:9]))/15
+
+score.gpqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st5 <- c(score.gpqm.conditioned.st5, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st5 <- (sum(score.gpqm.conditioned.st5[1:6])+3*sum(score.gpqm.conditioned.st5[7:9]))/15
+
+score.gpqm.conditioned.st5.triple <- score.gpqm.conditioned.st5
+score.gpqm.st5.triple <- score.gpqm.st5
+```
+
+```{r}
+score.gpqm.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st5 <- c(score.gpqm.st5, norm.vector[[i]][3]) 
+}
+score.gpqm.st5 <- (sum(score.gpqm.st5[1:6])+2*sum(score.gpqm.st5[7:9]))/12
+
+score.gpqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st5 <- c(score.gpqm.conditioned.st5, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st5 <- (sum(score.gpqm.conditioned.st5[1:6])+2*sum(score.gpqm.conditioned.st5[7:9]))/12
+
+score.gpqm.conditioned.st5.double <- score.gpqm.conditioned.st5
+score.gpqm.st5.double <- score.gpqm.st5
+```
+
+```{r}
+score.gpqm.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st5 <- c(score.gpqm.st5, norm.vector[[i]][3]) 
+}
+score.gpqm.st5 <- mean(score.gpqm.st5)
+
+score.gpqm.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st5 <- c(score.gpqm.conditioned.st5, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st5<- mean(score.gpqm.conditioned.st5) 
+
+score.gpqm.conditioned.st5.mean <- score.gpqm.conditioned.st5
+score.gpqm.st5.mean <- score.gpqm.st5
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st5 <- c(score.gpqm2.st5, norm.vector[[i]][4]) 
+}
+score.gpqm2.st5 <- (sum(score.gpqm2.st5[1:6])+3*sum(score.gpqm2.st5[7:9]))/15
+
+score.gpqm2.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st5 <- c(score.gpqm2.conditioned.st5, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st5 <- (sum(score.gpqm2.conditioned.st5[1:6])+3*sum(score.gpqm2.conditioned.st5[7:9]))/15
+
+score.gpqm2.conditioned.st5.triple <- score.gpqm2.conditioned.st5
+score.gpqm2.st5.triple <- score.gpqm2.st5
+```
+
+```{r}
+score.gpqm2.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st5 <- c(score.gpqm2.st5, norm.vector[[i]][4]) 
+}
+score.gpqm2.st5 <- (sum(score.gpqm2.st5[1:6])+2*sum(score.gpqm2.st5[7:9]))/12
+
+score.gpqm2.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st5 <- c(score.gpqm2.conditioned.st5, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st5 <- (sum(score.gpqm2.conditioned.st5[1:6])+2*sum(score.gpqm2.conditioned.st5[7:9]))/12
+
+score.gpqm2.conditioned.st5.double <- score.gpqm2.conditioned.st5
+score.gpqm2.st5.double <- score.gpqm2.st5
+```
+
+```{r}
+score.gpqm2.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st5 <- c(score.gpqm2.st5, norm.vector[[i]][4]) 
+}
+score.gpqm2.st5 <- mean(score.gpqm2.st5)
+
+score.gpqm2.conditioned.st5 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st5 <- c(score.gpqm2.conditioned.st5, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st5<- mean(score.gpqm2.conditioned.st5) 
+
+score.gpqm2.conditioned.st5.mean <- score.gpqm2.conditioned.st5
+score.gpqm2.st5.mean <- score.gpqm2.st5
+
+
+```
+## Aoloau, American Samoa
+```{r}
+i=6
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- (sum(score.eqm.st6[1:6])+3*sum(score.eqm.st6[7:9]))/15
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st6 <- (sum(score.eqm.conditioned.st6[1:6])+3*sum(score.eqm.conditioned.st6[7:9]))/15
+
+score.eqm.conditioned.st6.triple <- score.eqm.conditioned.st6
+score.eqm.st6.triple <- score.eqm.st6
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- (sum(score.eqm.st6[1:6])+2*sum(score.eqm.st6[7:9]))/12
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st6 <- (sum(score.eqm.conditioned.st6[1:6])+2*sum(score.eqm.conditioned.st6[7:9]))/12
+
+score.eqm.conditioned.st6.double <- score.eqm.conditioned.st6
+score.eqm.st6.double <- score.eqm.st6
+```
+
+```{r}
+score.eqm.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.st6 <- c(score.eqm.st6, norm.vector[[i]][1]) 
+}
+score.eqm.st6 <- mean(score.eqm.st6)
+
+score.eqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st6 <- c(score.eqm.conditioned.st6, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st6<- mean(score.eqm.conditioned.st6) 
+
+score.eqm.conditioned.st6.mean <- score.eqm.conditioned.st6
+score.eqm.st6.mean <- score.eqm.st6
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.st6 <- c(score.pqm.st6, norm.vector[[i]][2]) 
+}
+score.pqm.st6 <- (sum(score.pqm.st6[1:6])+3*sum(score.pqm.st6[7:9]))/15
+
+score.pqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st6 <- c(score.pqm.conditioned.st6, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st6 <- (sum(score.pqm.conditioned.st6[1:6])+3*sum(score.pqm.conditioned.st6[7:9]))/15
+
+score.pqm.conditioned.st6.triple <- score.pqm.conditioned.st6
+score.pqm.st6.triple <- score.pqm.st6
+```
+
+```{r}
+score.pqm.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.st6 <- c(score.pqm.st6, norm.vector[[i]][2]) 
+}
+score.pqm.st6 <- (sum(score.pqm.st6[1:6])+2*sum(score.pqm.st6[7:9]))/12
+
+score.pqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st6 <- c(score.pqm.conditioned.st6, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st6 <- (sum(score.pqm.conditioned.st6[1:6])+2*sum(score.pqm.conditioned.st6[7:9]))/12
+
+score.pqm.conditioned.st6.double <- score.pqm.conditioned.st6
+score.pqm.st6.double <- score.pqm.st6
+```
+
+```{r}
+score.pqm.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.st6 <- c(score.pqm.st6, norm.vector[[i]][2]) 
+}
+score.pqm.st6 <- mean(score.pqm.st6)
+
+score.pqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st6 <- c(score.pqm.conditioned.st6, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st6<- mean(score.pqm.conditioned.st6) 
+
+score.pqm.conditioned.st6.mean <- score.pqm.conditioned.st6
+score.pqm.st6.mean <- score.pqm.st6
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st6 <- c(score.gpqm.st6, norm.vector[[i]][3]) 
+}
+score.gpqm.st6 <- (sum(score.gpqm.st6[1:6])+3*sum(score.gpqm.st6[7:9]))/15
+
+score.gpqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st6 <- c(score.gpqm.conditioned.st6, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st6 <- (sum(score.gpqm.conditioned.st6[1:6])+3*sum(score.gpqm.conditioned.st6[7:9]))/15
+
+score.gpqm.conditioned.st6.triple <- score.gpqm.conditioned.st6
+score.gpqm.st6.triple <- score.gpqm.st6
+```
+
+```{r}
+score.gpqm.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st6 <- c(score.gpqm.st6, norm.vector[[i]][3]) 
+}
+score.gpqm.st6 <- (sum(score.gpqm.st6[1:6])+2*sum(score.gpqm.st6[7:9]))/12
+
+score.gpqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st6 <- c(score.gpqm.conditioned.st6, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st6 <- (sum(score.gpqm.conditioned.st6[1:6])+2*sum(score.gpqm.conditioned.st6[7:9]))/12
+
+score.gpqm.conditioned.st6.double <- score.gpqm.conditioned.st6
+score.gpqm.st6.double <- score.gpqm.st6
+```
+
+```{r}
+score.gpqm.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st6 <- c(score.gpqm.st6, norm.vector[[i]][3]) 
+}
+score.gpqm.st6 <- mean(score.gpqm.st6)
+
+score.gpqm.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st6 <- c(score.gpqm.conditioned.st6, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st6<- mean(score.gpqm.conditioned.st6) 
+
+score.gpqm.conditioned.st6.mean <- score.gpqm.conditioned.st6
+score.gpqm.st6.mean <- score.gpqm.st6
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st6 <- c(score.gpqm2.st6, norm.vector[[i]][4]) 
+}
+score.gpqm2.st6 <- (sum(score.gpqm2.st6[1:6])+3*sum(score.gpqm2.st6[7:9]))/15
+
+score.gpqm2.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st6 <- c(score.gpqm2.conditioned.st6, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st6 <- (sum(score.gpqm2.conditioned.st6[1:6])+3*sum(score.gpqm2.conditioned.st6[7:9]))/15
+
+score.gpqm2.conditioned.st6.triple <- score.gpqm2.conditioned.st6
+score.gpqm2.st6.triple <- score.gpqm2.st6
+```
+
+```{r}
+score.gpqm2.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st6 <- c(score.gpqm2.st6, norm.vector[[i]][4]) 
+}
+score.gpqm2.st6 <- (sum(score.gpqm2.st6[1:6])+2*sum(score.gpqm2.st6[7:9]))/12
+
+score.gpqm2.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st6 <- c(score.gpqm2.conditioned.st6, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st6 <- (sum(score.gpqm2.conditioned.st6[1:6])+2*sum(score.gpqm2.conditioned.st6[7:9]))/12
+
+score.gpqm2.conditioned.st6.double <- score.gpqm2.conditioned.st6
+score.gpqm2.st6.double <- score.gpqm2.st6
+```
+
+```{r}
+score.gpqm2.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st6 <- c(score.gpqm2.st6, norm.vector[[i]][4]) 
+}
+score.gpqm2.st6 <- mean(score.gpqm2.st6)
+
+score.gpqm2.conditioned.st6 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st6 <- c(score.gpqm2.conditioned.st6, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st6<- mean(score.gpqm2.conditioned.st6) 
+
+score.gpqm2.conditioned.st6.mean <- score.gpqm2.conditioned.st6
+score.gpqm2.st6.mean <- score.gpqm2.st6
+
+
+```
+## Nu'uuli, American Samoa
+```{r}
+i=7
+
+station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$station_id[i])
+station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
+
+index.obs <- valueIndex1D(station.obs$Data[!is.na(station.obs$Data)],index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+index.obs <- c(index.obs, valueIndex1D(station.obs$Data[!is.na(station.obs$Data)], index.codes = "P98WetAmount"))
+
+index.obs.rv20max <- MaxReturnValue(station.obs)
+
+index.obs <- c(index.obs, index.obs.rv20max)
+
+index.obs.st1 <- index.obs
+
+cal.station.eqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "eqm")
+
+index.cal.station.eqm <- valueIndex1D(cal.station.eqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.eqm <- c(index.cal.station.eqm, valueIndex1D(cal.station.eqm$Data[!is.na(cal.station.eqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.eqm <- MaxReturnValue(cal.station.eqm)
+
+index.cal.station.eqm <- c(index.cal.station.eqm, index.cal.station.rv20max.eqm)
+
+##################################################################################
+cal.station.pqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "pqm")
+
+index.cal.station.pqm <- valueIndex1D(cal.station.pqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.pqm <- c(index.cal.station.pqm, valueIndex1D(cal.station.pqm$Data[!is.na(cal.station.pqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.pqm <- MaxReturnValue(cal.station.pqm)
+
+index.cal.station.pqm <- c(index.cal.station.pqm, index.cal.station.rv20max.pqm)
+
+##################################################################################
+
+cal.station.gpqm <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm")
+
+index.cal.station.gpqm <- valueIndex1D(cal.station.gpqm$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, valueIndex1D(cal.station.gpqm$Data[!is.na(cal.station.gpqm$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm <- MaxReturnValue(cal.station.gpqm)
+
+index.cal.station.gpqm <- c(index.cal.station.gpqm, index.cal.station.rv20max.gpqm)
+
+##################################################################################
+
+cal.station.gpqm2 <-  biasCorrection(y = station.obs, x = station.trmm, precipitation = TRUE,  method = "gpqm", theta = .7)
+
+index.cal.station.gpqm2 <- valueIndex1D(cal.station.gpqm2$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet"))
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, valueIndex1D(cal.station.gpqm2$Data[!is.na(cal.station.gpqm2$Data)], index.codes = "P98WetAmount"))
+
+index.cal.station.rv20max.gpqm2 <- MaxReturnValue(cal.station.gpqm2)
+
+index.cal.station.gpqm2 <- c(index.cal.station.gpqm2, index.cal.station.rv20max.gpqm2)
+
+##################################################################################
+
+
+station.obs.cl1 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+station.trmm.cl1 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 1))
+
+
+```
+
+```{r}
+cal.station.eqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl1 <- subsetDimension(cal.station.eqm.cl1, dimension = "time", indices = which(!is.na(cal.station.eqm.cl1$Data)))
+
+cal.station.eqm.cl1$Dates$start <- as.POSIXct(cal.station.eqm.cl1$Dates$start,tz = "GMT")
+cal.station.eqm.cl1$Dates$end <- as.POSIXct(cal.station.eqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl1 <- subsetDimension(cal.station.pqm.cl1, dimension = "time", indices = which(!is.na(cal.station.pqm.cl1$Data)))
+
+cal.station.pqm.cl1$Dates$start <- as.POSIXct(cal.station.pqm.cl1$Dates$start,tz = "GMT")
+cal.station.pqm.cl1$Dates$end <- as.POSIXct(cal.station.pqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl1 <- subsetDimension(cal.station.gpqm.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl1$Data)))
+
+cal.station.gpqm.cl1$Dates$start <- as.POSIXct(cal.station.gpqm.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm.cl1$Dates$end <- as.POSIXct(cal.station.gpqm.cl1$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl1 <- biasCorrection(y = station.obs.cl1, x = station.trmm.cl1, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl1 <- subsetDimension(cal.station.gpqm2.cl1, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl1$Data)))
+
+cal.station.gpqm2.cl1$Dates$start <- as.POSIXct(cal.station.gpqm2.cl1$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl1$Dates$end <- as.POSIXct(cal.station.gpqm2.cl1$Dates$end,tz = "GMT")
+```
+
+
+```{r}
+station.obs.cl2 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 2))
+
+
+station.trmm.cl2 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 2))
+```
+
+
+```{r}
+cal.station.eqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl2 <- subsetDimension(cal.station.eqm.cl2, dimension = "time", indices = which(!is.na(cal.station.eqm.cl2$Data)))
+
+cal.station.eqm.cl2$Dates$start <- as.POSIXct(cal.station.eqm.cl2$Dates$start,tz = "GMT")
+cal.station.eqm.cl2$Dates$end <- as.POSIXct(cal.station.eqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl2 <- subsetDimension(cal.station.pqm.cl2, dimension = "time", indices = which(!is.na(cal.station.pqm.cl2$Data)))
+
+cal.station.pqm.cl2$Dates$start <- as.POSIXct(cal.station.pqm.cl2$Dates$start,tz = "GMT")
+cal.station.pqm.cl2$Dates$end <- as.POSIXct(cal.station.pqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl2 <- subsetDimension(cal.station.gpqm.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl2$Data)))
+
+cal.station.gpqm.cl2$Dates$start <- as.POSIXct(cal.station.gpqm.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm.cl2$Dates$end <- as.POSIXct(cal.station.gpqm.cl2$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl2 <- biasCorrection(y = station.obs.cl2, x = station.trmm.cl2, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl2 <- subsetDimension(cal.station.gpqm2.cl2, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl2$Data)))
+
+cal.station.gpqm2.cl2$Dates$start <- as.POSIXct(cal.station.gpqm2.cl2$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl2$Dates$end <- as.POSIXct(cal.station.gpqm2.cl2$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl3 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 3))
+
+
+station.trmm.cl3 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 3))
+```
+
+
+```{r}
+cal.station.eqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl3 <- subsetDimension(cal.station.eqm.cl3, dimension = "time", indices = which(!is.na(cal.station.eqm.cl3$Data)))
+
+cal.station.eqm.cl3$Dates$start <- as.POSIXct(cal.station.eqm.cl3$Dates$start,tz = "GMT")
+cal.station.eqm.cl3$Dates$end <- as.POSIXct(cal.station.eqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl3 <- subsetDimension(cal.station.pqm.cl3, dimension = "time", indices = which(!is.na(cal.station.pqm.cl3$Data)))
+
+cal.station.pqm.cl3$Dates$start <- as.POSIXct(cal.station.pqm.cl3$Dates$start,tz = "GMT")
+cal.station.pqm.cl3$Dates$end <- as.POSIXct(cal.station.pqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl3 <- subsetDimension(cal.station.gpqm.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl3$Data)))
+
+cal.station.gpqm.cl3$Dates$start <- as.POSIXct(cal.station.gpqm.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm.cl3$Dates$end <- as.POSIXct(cal.station.gpqm.cl3$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl3 <- biasCorrection(y = station.obs.cl3, x = station.trmm.cl3, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl3 <- subsetDimension(cal.station.gpqm2.cl3, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl3$Data)))
+
+cal.station.gpqm2.cl3$Dates$start <- as.POSIXct(cal.station.gpqm2.cl3$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl3$Dates$end <- as.POSIXct(cal.station.gpqm2.cl3$Dates$end,tz = "GMT")
+
+```
+
+
+```{r}
+station.obs.cl4 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 4))
+
+
+station.trmm.cl4 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 4))
+```
+
+
+```{r}
+cal.station.eqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl4 <- subsetDimension(cal.station.eqm.cl4, dimension = "time", indices = which(!is.na(cal.station.eqm.cl4$Data)))
+
+cal.station.eqm.cl4$Dates$start <- as.POSIXct(cal.station.eqm.cl4$Dates$start,tz = "GMT")
+cal.station.eqm.cl4$Dates$end <- as.POSIXct(cal.station.eqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl4 <- subsetDimension(cal.station.pqm.cl4, dimension = "time", indices = which(!is.na(cal.station.pqm.cl4$Data)))
+
+cal.station.pqm.cl4$Dates$start <- as.POSIXct(cal.station.pqm.cl4$Dates$start,tz = "GMT")
+cal.station.pqm.cl4$Dates$end <- as.POSIXct(cal.station.pqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl4 <- subsetDimension(cal.station.gpqm.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl4$Data)))
+
+cal.station.gpqm.cl4$Dates$start <- as.POSIXct(cal.station.gpqm.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm.cl4$Dates$end <- as.POSIXct(cal.station.gpqm.cl4$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl4 <- biasCorrection(y = station.obs.cl4, x = station.trmm.cl4, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl4 <- subsetDimension(cal.station.gpqm2.cl4, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl4$Data)))
+
+cal.station.gpqm2.cl4$Dates$start <- as.POSIXct(cal.station.gpqm2.cl4$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl4$Dates$end <- as.POSIXct(cal.station.gpqm2.cl4$Dates$end,tz = "GMT")
+```
+
+```{r}
+station.obs.cl5 <- subsetDimension(station.obs, dimension = "time", indices = which(kmModel5$cluster == 5))
+
+
+station.trmm.cl5 <- subsetDimension(station.trmm, dimension = "time", indices = which(kmModel5$cluster == 5))
+```
+
+
+```{r}
+cal.station.eqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "eqm")
+cal.station.eqm.cl5 <- subsetDimension(cal.station.eqm.cl5, dimension = "time", indices = which(!is.na(cal.station.eqm.cl5$Data)))
+
+cal.station.eqm.cl5$Dates$start <- as.POSIXct(cal.station.eqm.cl5$Dates$start,tz = "GMT")
+cal.station.eqm.cl5$Dates$end <- as.POSIXct(cal.station.eqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.pqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "pqm")
+cal.station.pqm.cl5 <- subsetDimension(cal.station.pqm.cl5, dimension = "time", indices = which(!is.na(cal.station.pqm.cl5$Data)))
+
+cal.station.pqm.cl5$Dates$start <- as.POSIXct(cal.station.pqm.cl5$Dates$start,tz = "GMT")
+cal.station.pqm.cl5$Dates$end <- as.POSIXct(cal.station.pqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm")
+cal.station.gpqm.cl5 <- subsetDimension(cal.station.gpqm.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm.cl5$Data)))
+
+cal.station.gpqm.cl5$Dates$start <- as.POSIXct(cal.station.gpqm.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm.cl5$Dates$end <- as.POSIXct(cal.station.gpqm.cl5$Dates$end,tz = "GMT")
+
+##################################################################################
+
+cal.station.gpqm2.cl5 <- biasCorrection(y = station.obs.cl5, x = station.trmm.cl5, precipitation = TRUE,  method = "gpqm", theta = .7)
+cal.station.gpqm2.cl5 <- subsetDimension(cal.station.gpqm2.cl5, dimension = "time", indices = which(!is.na(cal.station.gpqm2.cl5$Data)))
+
+cal.station.gpqm2.cl5$Dates$start <- as.POSIXct(cal.station.gpqm2.cl5$Dates$start,tz = "GMT")
+cal.station.gpqm2.cl5$Dates$end <- as.POSIXct(cal.station.gpqm2.cl5$Dates$end,tz = "GMT")
+
+```
+
+```{r}
+output.list <- list(cal.station.eqm.cl1, cal.station.eqm.cl2, cal.station.eqm.cl3,
+                    cal.station.eqm.cl4,cal.station.eqm.cl5)
+
+
+station.cal.eqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.pqm.cl1, cal.station.pqm.cl2, cal.station.pqm.cl3,
+                    cal.station.pqm.cl4,cal.station.pqm.cl5)
+
+
+station.cal.pqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm.cl1, cal.station.gpqm.cl2, cal.station.gpqm.cl3,
+                    cal.station.gpqm.cl4,cal.station.gpqm.cl5)
+
+
+station.cal.gpqm.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+
+###################################################################
+output.list <- list(cal.station.gpqm2.cl1, cal.station.gpqm2.cl2, cal.station.gpqm2.cl3,
+                    cal.station.gpqm2.cl4,cal.station.gpqm2.cl5)
+
+
+station.cal.gpqm2.conditioned <- redim(bindGrid(output.list, dimension = "time"), drop = TRUE)
+```
+
+
+```{r}
+index.cal.station.eqm.conditioned <- valueIndex1D(station.cal.eqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.eqm.conditioned.rv20max <- MaxReturnValue(station.cal.eqm.conditioned)
+
+index.cal.station.eqm.conditioned <- c(index.cal.station.eqm.conditioned,
+                                   index.cal.station.eqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.pqm.conditioned <- valueIndex1D(station.cal.pqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.pqm.conditioned.rv20max <- MaxReturnValue(station.cal.pqm.conditioned)
+
+index.cal.station.pqm.conditioned <- c(index.cal.station.pqm.conditioned,
+                                   index.cal.station.pqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm.conditioned <- valueIndex1D(station.cal.gpqm.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm.conditioned)
+
+index.cal.station.gpqm.conditioned <- c(index.cal.station.gpqm.conditioned,
+                                   index.cal.station.gpqm.conditioned.rv20max)
+
+#############################################################################
+
+index.cal.station.gpqm2.conditioned <- valueIndex1D(station.cal.gpqm2.conditioned$Data,index.codes=c("Skewness","SDII","R10","R10p","R20","R20p","P98Wet","P98WetAmount"))
+
+
+index.cal.station.gpqm2.conditioned.rv20max <- MaxReturnValue(station.cal.gpqm2.conditioned)
+
+index.cal.station.gpqm2.conditioned <- c(index.cal.station.gpqm2.conditioned,
+                                   index.cal.station.gpqm2.conditioned.rv20max)
+
+```
+
+```{r}
+measures <- list()
+for (i in c(1:9)) {
+  measures[[length(measures)+1]] <- c(abs(index.cal.station.eqm[i]-index.obs[i]),abs(index.cal.station.pqm[i]-index.obs[i]),abs(index.cal.station.gpqm[i]-index.obs[i]),abs(index.cal.station.gpqm2[i]-index.obs[i]),abs(index.cal.station.eqm.conditioned[i]-index.obs[i]),abs(index.cal.station.pqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm.conditioned[i]-index.obs[i]),abs(index.cal.station.gpqm2.conditioned[i]-index.obs[i])) 
+}
+```
+
+
+```{r}
+norm.vector <- list()
+for (i in c(1:length(measures))) {
+  norm.vector[[length(norm.vector)+1]] <- normalization(measures[[i]]) 
+}
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- (sum(score.eqm.st7[1:6])+3*sum(score.eqm.st7[7:9]))/15
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st7 <- (sum(score.eqm.conditioned.st7[1:6])+3*sum(score.eqm.conditioned.st7[7:9]))/15
+
+score.eqm.conditioned.st7.triple <- score.eqm.conditioned.st7
+score.eqm.st7.triple <- score.eqm.st7
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- (sum(score.eqm.st7[1:6])+2*sum(score.eqm.st7[7:9]))/12
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st7 <- (sum(score.eqm.conditioned.st7[1:6])+2*sum(score.eqm.conditioned.st7[7:9]))/12
+
+score.eqm.conditioned.st7.double <- score.eqm.conditioned.st7
+score.eqm.st7.double <- score.eqm.st7
+```
+
+```{r}
+score.eqm.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.st7 <- c(score.eqm.st7, norm.vector[[i]][1]) 
+}
+score.eqm.st7 <- mean(score.eqm.st7)
+
+score.eqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.eqm.conditioned.st7 <- c(score.eqm.conditioned.st7, norm.vector[[i]][5]) 
+}
+score.eqm.conditioned.st7<- mean(score.eqm.conditioned.st7) 
+
+score.eqm.conditioned.st7.mean <- score.eqm.conditioned.st7
+score.eqm.st7.mean <- score.eqm.st7
+
+
+####################################################################
+```
+
+```{r}
+score.pqm.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.st7 <- c(score.pqm.st7, norm.vector[[i]][2]) 
+}
+score.pqm.st7 <- (sum(score.pqm.st7[1:6])+3*sum(score.pqm.st7[7:9]))/15
+
+score.pqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st7 <- c(score.pqm.conditioned.st7, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st7 <- (sum(score.pqm.conditioned.st7[1:6])+3*sum(score.pqm.conditioned.st7[7:9]))/15
+
+score.pqm.conditioned.st7.triple <- score.pqm.conditioned.st7
+score.pqm.st7.triple <- score.pqm.st7
+```
+
+```{r}
+score.pqm.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.st7 <- c(score.pqm.st7, norm.vector[[i]][2]) 
+}
+score.pqm.st7 <- (sum(score.pqm.st7[1:6])+2*sum(score.pqm.st7[7:9]))/12
+
+score.pqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st7 <- c(score.pqm.conditioned.st7, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st7 <- (sum(score.pqm.conditioned.st7[1:6])+2*sum(score.pqm.conditioned.st7[7:9]))/12
+
+score.pqm.conditioned.st7.double <- score.pqm.conditioned.st7
+score.pqm.st7.double <- score.pqm.st7
+```
+
+```{r}
+score.pqm.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.st7 <- c(score.pqm.st7, norm.vector[[i]][2]) 
+}
+score.pqm.st7 <- mean(score.pqm.st7)
+
+score.pqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.pqm.conditioned.st7 <- c(score.pqm.conditioned.st7, norm.vector[[i]][6]) 
+}
+score.pqm.conditioned.st7<- mean(score.pqm.conditioned.st7) 
+
+score.pqm.conditioned.st7.mean <- score.pqm.conditioned.st7
+score.pqm.st7.mean <- score.pqm.st7
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st7 <- c(score.gpqm.st7, norm.vector[[i]][3]) 
+}
+score.gpqm.st7 <- (sum(score.gpqm.st7[1:6])+3*sum(score.gpqm.st7[7:9]))/15
+
+score.gpqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st7 <- c(score.gpqm.conditioned.st7, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st7 <- (sum(score.gpqm.conditioned.st7[1:6])+3*sum(score.gpqm.conditioned.st7[7:9]))/15
+
+score.gpqm.conditioned.st7.triple <- score.gpqm.conditioned.st7
+score.gpqm.st7.triple <- score.gpqm.st7
+```
+
+```{r}
+score.gpqm.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st7 <- c(score.gpqm.st7, norm.vector[[i]][3]) 
+}
+score.gpqm.st7 <- (sum(score.gpqm.st7[1:6])+2*sum(score.gpqm.st7[7:9]))/12
+
+score.gpqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st7 <- c(score.gpqm.conditioned.st7, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st7 <- (sum(score.gpqm.conditioned.st7[1:6])+2*sum(score.gpqm.conditioned.st7[7:9]))/12
+
+score.gpqm.conditioned.st7.double <- score.gpqm.conditioned.st7
+score.gpqm.st7.double <- score.gpqm.st7
+```
+
+```{r}
+score.gpqm.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.st7 <- c(score.gpqm.st7, norm.vector[[i]][3]) 
+}
+score.gpqm.st7 <- mean(score.gpqm.st7)
+
+score.gpqm.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm.conditioned.st7 <- c(score.gpqm.conditioned.st7, norm.vector[[i]][7]) 
+}
+score.gpqm.conditioned.st7<- mean(score.gpqm.conditioned.st7) 
+
+score.gpqm.conditioned.st7.mean <- score.gpqm.conditioned.st7
+score.gpqm.st7.mean <- score.gpqm.st7
+
+
+####################################################################
+```
+
+```{r}
+score.gpqm2.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st7 <- c(score.gpqm2.st7, norm.vector[[i]][4]) 
+}
+score.gpqm2.st7 <- (sum(score.gpqm2.st7[1:6])+3*sum(score.gpqm2.st7[7:9]))/15
+
+score.gpqm2.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st7 <- c(score.gpqm2.conditioned.st7, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st7 <- (sum(score.gpqm2.conditioned.st7[1:6])+3*sum(score.gpqm2.conditioned.st7[7:9]))/15
+
+score.gpqm2.conditioned.st7.triple <- score.gpqm2.conditioned.st7
+score.gpqm2.st7.triple <- score.gpqm2.st7
+```
+
+```{r}
+score.gpqm2.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st7 <- c(score.gpqm2.st7, norm.vector[[i]][4]) 
+}
+score.gpqm2.st7 <- (sum(score.gpqm2.st7[1:6])+2*sum(score.gpqm2.st7[7:9]))/12
+
+score.gpqm2.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st7 <- c(score.gpqm2.conditioned.st7, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st7 <- (sum(score.gpqm2.conditioned.st7[1:6])+2*sum(score.gpqm2.conditioned.st7[7:9]))/12
+
+score.gpqm2.conditioned.st7.double <- score.gpqm2.conditioned.st7
+score.gpqm2.st7.double <- score.gpqm2.st7
+```
+
+```{r}
+score.gpqm2.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.st7 <- c(score.gpqm2.st7, norm.vector[[i]][4]) 
+}
+score.gpqm2.st7 <- mean(score.gpqm2.st7)
+
+score.gpqm2.conditioned.st7 <- c()
+for (i in c(1:9)) {
+  score.gpqm2.conditioned.st7 <- c(score.gpqm2.conditioned.st7, norm.vector[[i]][8]) 
+}
+score.gpqm2.conditioned.st7<- mean(score.gpqm2.conditioned.st7) 
+
+score.gpqm2.conditioned.st7.mean <- score.gpqm2.conditioned.st7
+score.gpqm2.st7.mean <- score.gpqm2.st7
+
+
+```
+
+# Boxplots
+
+## EQM Comparison
+```{r}
+df <- data.frame(c(score.eqm.st1.mean, score.eqm.st2.mean,score.eqm.st3.mean, score.eqm.st4.mean, score.eqm.st5.mean,score.eqm.st6.mean,score.eqm.st7.mean,score.eqm.conditioned.st1.mean, score.eqm.conditioned.st2.mean,score.eqm.conditioned.st3.mean, score.eqm.conditioned.st4.mean, score.eqm.conditioned.st5.mean,score.eqm.conditioned.st6.mean,score.eqm.conditioned.st7.mean), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with equal weights")
+```
+
+
+
+```{r}
+df <- data.frame(c(score.eqm.st1.double, score.eqm.st2.double,score.eqm.st3.double, score.eqm.st4.double, score.eqm.st5.double,score.eqm.st6.double,score.eqm.st7.double,score.eqm.conditioned.st1.double, score.eqm.conditioned.st2.double,score.eqm.conditioned.st3.double, score.eqm.conditioned.st4.double, score.eqm.conditioned.st5.double,score.eqm.conditioned.st6.double,score.eqm.conditioned.st7.double), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with different weights")
+```
+```{r}
+df <- data.frame(c(score.eqm.st1.triple, score.eqm.st2.triple,score.eqm.st3.triple, score.eqm.st4.triple, score.eqm.st5.triple,score.eqm.st6.triple,score.eqm.st7.triple,score.eqm.conditioned.st1.triple, score.eqm.conditioned.st2.triple,score.eqm.conditioned.st3.triple, score.eqm.conditioned.st4.triple, score.eqm.conditioned.st5.triple,score.eqm.conditioned.st6.triple,score.eqm.conditioned.st7.triple), c(rep("EQM-Raw",7),rep("EQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("EQM-Raw vs EQM-Conditioned Scores Boxplot with different weights")
+```
+
+## PQM Comparison
+
+```{r}
+df <- data.frame(c(score.pqm.st1.mean, score.pqm.st2.mean,score.pqm.st3.mean, score.pqm.st4.mean, score.pqm.st5.mean,score.pqm.st6.mean,score.pqm.st7.mean,score.pqm.conditioned.st1.mean, score.pqm.conditioned.st2.mean,score.pqm.conditioned.st3.mean, score.pqm.conditioned.st4.mean, score.pqm.conditioned.st5.mean,score.pqm.conditioned.st6.mean,score.pqm.conditioned.st7.mean), c(rep("PQM-Raw",7),rep("PQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("PQM-Raw vs PQM-Conditioned Scores Boxplot with equal weights")
+```
+
+
+
+```{r}
+df <- data.frame(c(score.pqm.st1.double, score.pqm.st2.double,score.pqm.st3.double, score.pqm.st4.double, score.pqm.st5.double,score.pqm.st6.double,score.pqm.st7.double,score.pqm.conditioned.st1.double, score.pqm.conditioned.st2.double,score.pqm.conditioned.st3.double, score.pqm.conditioned.st4.double, score.pqm.conditioned.st5.double,score.pqm.conditioned.st6.double,score.pqm.conditioned.st7.double), c(rep("PQM-Raw",7),rep("PQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("PQM-Raw vs PQM-Conditioned Scores Boxplot with different weights")
+```
+```{r}
+df <- data.frame(c(score.pqm.st1.triple, score.pqm.st2.triple,score.pqm.st3.triple, score.pqm.st4.triple, score.pqm.st5.triple,score.pqm.st6.triple,score.pqm.st7.triple,score.pqm.conditioned.st1.triple, score.pqm.conditioned.st2.triple,score.pqm.conditioned.st3.triple, score.pqm.conditioned.st4.triple, score.pqm.conditioned.st5.triple,score.pqm.conditioned.st6.triple,score.pqm.conditioned.st7.triple), c(rep("PQM-Raw",7),rep("PQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("PQM-Raw vs PQM-Conditioned Scores Boxplot with different weights")
+```
+
+## GPQM Comparison
+
+```{r}
+df <- data.frame(c(score.gpqm.st1.mean, score.gpqm.st2.mean,score.gpqm.st3.mean, score.gpqm.st4.mean, score.gpqm.st5.mean,score.gpqm.st6.mean,score.gpqm.st7.mean,score.gpqm.conditioned.st1.mean, score.gpqm.conditioned.st2.mean,score.gpqm.conditioned.st3.mean, score.gpqm.conditioned.st4.mean, score.gpqm.conditioned.st5.mean,score.gpqm.conditioned.st6.mean,score.gpqm.conditioned.st7.mean), c(rep("GPQM-Raw",7),rep("GPQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM-Raw vs GPQM-Conditioned Scores Boxplot with equal weights")
+```
+
+
+
+```{r}
+df <- data.frame(c(score.gpqm.st1.double, score.gpqm.st2.double,score.gpqm.st3.double, score.gpqm.st4.double, score.gpqm.st5.double,score.gpqm.st6.double,score.gpqm.st7.double,score.gpqm.conditioned.st1.double, score.gpqm.conditioned.st2.double,score.gpqm.conditioned.st3.double, score.gpqm.conditioned.st4.double, score.gpqm.conditioned.st5.double,score.gpqm.conditioned.st6.double,score.gpqm.conditioned.st7.double), c(rep("GPQM-Raw",7),rep("GPQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM-Raw vs GPQM-Conditioned Scores Boxplot with different weights")
+```
+```{r}
+df <- data.frame(c(score.gpqm.st1.triple, score.gpqm.st2.triple,score.gpqm.st3.triple, score.gpqm.st4.triple, score.gpqm.st5.triple,score.gpqm.st6.triple,score.gpqm.st7.triple,score.gpqm.conditioned.st1.triple, score.gpqm.conditioned.st2.triple,score.gpqm.conditioned.st3.triple, score.gpqm.conditioned.st4.triple, score.gpqm.conditioned.st5.triple,score.gpqm.conditioned.st6.triple,score.gpqm.conditioned.st7.triple), c(rep("GPQM-Raw",7),rep("GPQM-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM-Raw vs GPQM-Conditioned Scores Boxplot with different weights")
+```
+
+## GPQM2 Comparison
+
+```{r}
+df <- data.frame(c(score.gpqm2.st1.mean, score.gpqm2.st2.mean,score.gpqm2.st3.mean, score.gpqm2.st4.mean, score.gpqm2.st5.mean,score.gpqm2.st6.mean,score.gpqm2.st7.mean,score.gpqm2.conditioned.st1.mean, score.gpqm2.conditioned.st2.mean,score.gpqm2.conditioned.st3.mean, score.gpqm2.conditioned.st4.mean, score.gpqm2.conditioned.st5.mean,score.gpqm2.conditioned.st6.mean,score.gpqm2.conditioned.st7.mean), c(rep("GPQM2-Raw",7),rep("GPQM2-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM2-Raw vs GPQM2-Conditioned Scores Boxplot with equal weights")
+```
+
+
+
+```{r}
+df <- data.frame(c(score.gpqm2.st1.double, score.gpqm2.st2.double,score.gpqm2.st3.double, score.gpqm2.st4.double, score.gpqm2.st5.double,score.gpqm2.st6.double,score.gpqm2.st7.double,score.gpqm2.conditioned.st1.double, score.gpqm2.conditioned.st2.double,score.gpqm2.conditioned.st3.double, score.gpqm2.conditioned.st4.double, score.gpqm2.conditioned.st5.double,score.gpqm2.conditioned.st6.double,score.gpqm2.conditioned.st7.double), c(rep("GPQM2-Raw",7),rep("GPQM2-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM2-Raw vs GPQM2-Conditioned Scores Boxplot with different weights")
+```
+```{r}
+df <- data.frame(c(score.gpqm2.st1.triple, score.gpqm2.st2.triple,score.gpqm2.st3.triple, score.gpqm2.st4.triple, score.gpqm2.st5.triple,score.gpqm2.st6.triple,score.gpqm2.st7.triple,score.gpqm2.conditioned.st1.triple, score.gpqm2.conditioned.st2.triple,score.gpqm2.conditioned.st3.triple, score.gpqm2.conditioned.st4.triple, score.gpqm2.conditioned.st5.triple,score.gpqm2.conditioned.st6.triple,score.gpqm2.conditioned.st7.triple), c(rep("GPQM2-Raw",7),rep("GPQM2-Conditioned",7)))
+colnames(df) <- c("Score_Value", "Type")
+
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = Type , y= Score_Value)) +
+   ggtitle("GPQM2-Raw vs GPQM2-Conditioned Scores Boxplot with different weights")
+```
