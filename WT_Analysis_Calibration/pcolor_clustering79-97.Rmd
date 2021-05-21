@@ -1,5 +1,5 @@
 ---
-title: "WT-associated clustering in the South Pacific Basin"
+title: "WT-associated clustering in the South Pacific Basin during 1979-1997 period"
 output: html_notebook
 ---
 ```{r}
@@ -31,13 +31,32 @@ library(raster)
 library(rasterVis)
 library(sp)
 library(grid)
+library(clue)
+```
+
+```{r}
+set.seed(42)
+load("pca.projected2.RData")
+load("pp_reanalysis_complete2.RData")
+load("pca.RData")
+```
+
+```{r}
+par(mfrow=c(3,2))
+
+plot(pca$tp[[1]]$PCs, main = "PC1 vs PC2 tp Old PCA")
+plot(pca.projected$tp[[1]], main = "PC1 vs PC2 tp Projecteed PCA")
+
+plot(pca$msl[[1]]$PCs, main = "PC1 vs PC2 slp Old PCA")
+plot(pca.projected$msl[[1]], main = "PC1 vs PC2 slp Projected PCA")
+
+plot(pca$diff_msl[[1]]$PCs, main = "PC1 vs PC2 diff slp Old PCA")
+plot(pca.projected$diff_slp[[1]], main = "PC1 vs PC2 diff slp Projected PCA")
 ```
 
 
 ```{r}
-set.seed(42)
-load("pca.RData")
-load("pp_reanalysis.RData")
+pp.complete <- subsetGrid(pp.complete, years = 1979:1997)
 ```
 
 ```{r}
@@ -46,50 +65,60 @@ load('kmModel5.RData')
 ```
 
 ```{r}
-idx.tp <- which(attributes(pca$tp[[1]])$explained_variance >= .75)[1]
-idx.msl <- which(attributes(pca$msl[[1]])$explained_variance >= .9)[1]
-idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
-
-pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
+pca.projected.matrix <- cbind(pca.projected$tp[[1]],pca.projected$msl[[1]],pca.projected$diff_slp[[1]])
 ```
 
 ```{r}
-cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1998_2020.csv')
-cyclones$Date <- as.Date(cyclones$Date)
-cyclones <- cyclones[,2:3]
+clustering <- cl_predict(kmModel5, pca.projected.matrix, type = "class_ids")
+```
 
-pres_cyc <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_min_pressure.csv') 
-pres_cyc$Date <- as.Date(pres_cyc$Date)
-pres_cyc <- pres_cyc[,2:3]
 
-wind <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_sustained_wind.csv') 
-wind$Date <- as.Date(wind$Date)
-wind <- wind[,2:3]
+
+```{r}
+size <- c()
+for (i in c(1:k)) {
+  size <- c(size,length(which(clustering == i)))
+}
 ```
 
 ```{r}
-lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
+lista <- lapply(1:k, function(x) subsetDimension(pp.complete, dimension = "time", indices = which(clustering == x)) %>% climatology())
 
 kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
 
-spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
-```
-```{r}
-cl1 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 1))
-cl2 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 2))
-cl3 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 3))
-cl4 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 4))
-cl5 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 5))
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":", size[1:k]))
 ```
 
 ```{r}
+b <- boxplot(aggregateGrid(pp.complete, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~clustering, main = "Precipitation Data for each cluster")
+```
+
+```{r}
+violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4), "Cluster5" = subsetGrid(kmedias.pp, members = 5))
+```
 
 
-cyclones.cl.1 <- cyclones[which(kmModel5$cluster ==1 ),]
-cyclones.cl.2 <- cyclones[which(kmModel5$cluster ==2 ),]
-cyclones.cl.3 <- cyclones[which(kmModel5$cluster ==3 ),]
-cyclones.cl.4 <- cyclones[which(kmModel5$cluster ==4 ),]
-cyclones.cl.5 <- cyclones[which(kmModel5$cluster ==5 ),]
+```{r}
+cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1979_2020.csv')
+cyclones$Date <- as.Date(cyclones$Date)
+idx.cyc <- which(cyclones$Date < as.Date("1998-01-01"))
+cyclones <- cyclones[idx.cyc,2:3]
+```
+
+```{r}
+cl1 <- subsetDimension(pp.complete, dimension = "time", indices = which(clustering == 1))
+cl2 <- subsetDimension(pp.complete, dimension = "time", indices = which(clustering == 2))
+cl3 <- subsetDimension(pp.complete, dimension = "time", indices = which(clustering == 3))
+cl4 <- subsetDimension(pp.complete, dimension = "time", indices = which(clustering == 4))
+cl5 <- subsetDimension(pp.complete, dimension = "time", indices = which(clustering == 5))
+```
+
+```{r}
+cyclones.cl.1 <- cyclones[which(clustering ==1 ),]
+cyclones.cl.2 <- cyclones[which(clustering ==2 ),]
+cyclones.cl.3 <- cyclones[which(clustering ==3 ),]
+cyclones.cl.4 <- cyclones[which(clustering ==4 ),]
+cyclones.cl.5 <- cyclones[which(clustering ==5 ),]
 
 cluster1 <- c()
 cluster2 <- c()
@@ -107,8 +136,13 @@ for (i in c(1:12)) {
   cluster1 <- c(cluster1, length(subsetSeason(cl1, season = i)$Dates$start))
   cluster2 <- c(cluster2, length(subsetSeason(cl2, season = i)$Dates$start))
   cluster3 <- c(cluster3, length(subsetSeason(cl3, season = i)$Dates$start))
-  cluster4 <- c(cluster4, length(subsetSeason(cl4, season = i)$Dates$start))
+  if (i == 9) {
+    cluster4 <- c(cluster4,0)
+  }else{
+    cluster4 <- c(cluster4, length(subsetSeason(cl4, season = i)$Dates$start))
+  }
   cluster5 <- c(cluster5, length(subsetSeason(cl5, season = i)$Dates$start))
+  
   
   idx <- which(as.numeric(format(cyclones.cl.1$Date, "%m")) == i)
   cyc.cluster1 <- c(cyc.cluster1,sum(cyclones.cl.1$cyclones_generation_centers[idx]))
@@ -127,22 +161,21 @@ y <- seq(1,12)
 data <- expand.grid(X=x, Y=y)
 data$Z <- as.vector(t(matrix(c(cluster1,cluster2,cluster3,cluster4,cluster5), nrow = 12,ncol = 5)))
 
+
 cyc.data <- expand.grid(X=x, Y=y)
 cyc.data$Z <- as.vector(t(matrix(c(cyc.cluster1,cyc.cluster2,cyc.cluster3,cyc.cluster4,cyc.cluster5), nrow = 12,ncol = 5)))
 levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
           main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))
+
 grid.text("N Obs", .94, .13)
 ```
 ```{r}
 coordinates(cyc.data) <- ~Y+X
-```
 
-
-```{r}
 levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
           main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))+
-  layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))+
-  layer(panel.segments(10.5,1.5,12.5,1.5, col = 'blue', lwd = 2))+
+  layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/350, col = 'blue'))+
+   layer(panel.segments(10.5,1.5,12.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,10.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,12.5,0.5, col = 'blue', lwd = 2))+
   layer(panel.segments(0.5,1.5,5.5,1.5, col = 'blue', lwd = 2))+
@@ -169,19 +202,14 @@ levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
   layer(panel.segments(11.5,4.5,12.5,4.5, col = 'blue', lwd = 2))+
   layer(panel.segments(11.5,3.5,11.5,4.5, col = 'blue', lwd = 2))+
   
-  layer(panel.segments(4.5,4.5,10.5,4.5, col = 'blue', lwd = 2))+
-  layer(panel.segments(4.5,5.49,10.5,5.49, col = 'blue', lwd = 2))+
-  layer(panel.segments(4.5,4.5,4.5,5.49, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,4.5,10.5,4.5, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,5.49,10.5,5.49, col = 'blue', lwd = 2))+
+  layer(panel.segments(3.5,4.5,3.5,5.49, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,4.5,10.5,5.49, col = 'blue', lwd = 2))
 
-
- 
-  
 grid.text("N Obs", .94, .13)
+
 ```
-
-
-
 
 
 ```{r}
@@ -189,8 +217,16 @@ getWTSeason <- function(cluster, threshold){
   lista <- list()
   pp.season <- c()
   for (i in c(1:12)) {
-    lista[[length(lista)+1]] <- subsetSeason(cluster, season = i)
-    pp.season <- c(pp.season, sum(lista[[i]]$Data))
+
+    if (length(which(month(cluster$Dates$start) == i)) > 0){
+      
+      lista[[length(lista)+1]] <- subsetSeason(cluster, season = i)
+      pp.season <- c(pp.season, sum(lista[[i]]$Data))
+      
+    }else{
+      lista[[length(lista)+1]] <- 0
+      pp.season <- c(pp.season, 0)
+    }
   }
 
   names(pp.season) <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
@@ -202,6 +238,7 @@ getWTSeason <- function(cluster, threshold){
   
   return(pp.season)
 }
+
 ```
 
 ```{r}
@@ -210,6 +247,7 @@ pp.season.cl1 <- getWTSeason(cl1, .8)
 barplot(pp.season.cl1, names.arg = names(pp.season.cl1), col = 'blue', 
         main = "Normalized precipitation in each month in Cl1")
 ```
+
 ```{r}
 seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 
@@ -282,14 +320,15 @@ if (length(which(diff(ordered.seasons) > 1)) > 0) {
 }else{
   paste("Season starts in ", seasons[ordered.seasons[1]],"and finishes in", seasons[ordered.seasons[length(ordered.seasons)]])
 }
-
 ```
+
 ```{r}
 pp.season.cl4 <- getWTSeason(cl4, .8)
 
 barplot(pp.season.cl4, names.arg = names(pp.season.cl4), col = 'blue', 
         main = "Normalized precipitation in each month in Cl4")
 ```
+
 ```{r}
 seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 
@@ -310,13 +349,13 @@ if (length(which(diff(ordered.seasons) > 1)) > 0) {
 }
 ```
 
-
 ```{r}
 pp.season.cl5 <- getWTSeason(cl5, .8)
 
 barplot(pp.season.cl5, names.arg = names(pp.season.cl5), col = 'blue', 
         main = "Normalized precipitation in each month in Cl5")
 ```
+
 ```{r}
 seasons <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 
@@ -337,141 +376,4 @@ if (length(which(diff(ordered.seasons) > 1)) > 0) {
 }
 ```
 
-
-
-
-
-
-
-
-
-```{r}
-pres_cyc.cl.1 <- c()
-pres_cyc.cl.2 <- c()
-pres_cyc.cl.3 <- c()
-pres_cyc.cl.4 <- c()
-pres_cyc.cl.5 <- c()
-
-idx.cl1 <- match(cyclones.cl.1$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.1$Date, pres_cyc$Date))]
-idx.cl2 <- match(cyclones.cl.2$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.2$Date, pres_cyc$Date))]
-idx.cl3 <- match(cyclones.cl.3$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.3$Date, pres_cyc$Date))]
-idx.cl4 <- match(cyclones.cl.4$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.4$Date, pres_cyc$Date))]
-idx.cl5 <- match(cyclones.cl.5$Date, pres_cyc$Date)[!is.na(match(cyclones.cl.5$Date, pres_cyc$Date))]
-pres_cyc.cl.1$min_pressure <- pres_cyc$min_pressure[idx.cl1]
-pres_cyc.cl.2$min_pressure <- pres_cyc$min_pressure[idx.cl2]
-pres_cyc.cl.3$min_pressure <- pres_cyc$min_pressure[idx.cl3]
-pres_cyc.cl.4$min_pressure <- pres_cyc$min_pressure[idx.cl4]
-pres_cyc.cl.5$min_pressure <- pres_cyc$min_pressure[idx.cl5]
-
-pres_cyc.cl.1$Date <- pres_cyc$Date[idx.cl1]
-pres_cyc.cl.2$Date <- pres_cyc$Date[idx.cl2]
-pres_cyc.cl.3$Date <- pres_cyc$Date[idx.cl3]
-pres_cyc.cl.4$Date <- pres_cyc$Date[idx.cl4]
-pres_cyc.cl.5$Date <- pres_cyc$Date[idx.cl5]
-
-boxplot(c(pres_cyc.cl.1$min_pressure, pres_cyc.cl.2$min_pressure, pres_cyc.cl.3$min_pressure, pres_cyc.cl.4$min_pressure, pres_cyc.cl.5$min_pressure)~ c(rep("1", length(pres_cyc.cl.1$min_pressure)),rep("2", length(pres_cyc.cl.2$min_pressure)),rep("3", length(pres_cyc.cl.3$min_pressure)),rep("4", length(pres_cyc.cl.4$min_pressure)),rep("5", length(pres_cyc.cl.5$min_pressure))), main = "Mean minimun pressure for each cluster", xlab = "Cluster", ylab = "Min Pressure (mb)")
-```
-
-```{r}
-paste(length(pres_cyc.cl.1$min_pressure),length(pres_cyc.cl.2$min_pressure),length(pres_cyc.cl.3$min_pressure),length(pres_cyc.cl.4$min_pressure),length(pres_cyc.cl.5$min_pressure))
-```
-
-```{r}
-cluster_pres1 <- c()
-cluster_pres2 <- c()
-cluster_pres3 <- c()
-cluster_pres4 <- c()
-cluster_pres5 <- c()
-for (i in c(1:12)) {
-
-  idx <- which(as.integer(format(pres_cyc.cl.1$Date, '%m')) == i)
-  cluster_pres1 <- c(cluster_pres1,mean(pres_cyc.cl.1$min_pressure[idx]))
-  idx <- which(as.integer(format(pres_cyc.cl.2$Date, '%m')) == i)
-  cluster_pres2 <- c(cluster_pres2,mean(pres_cyc.cl.2$min_pressure[idx]))
-  idx <- which(as.integer(format(pres_cyc.cl.3$Date, '%m')) == i)
-  cluster_pres3 <- c(cluster_pres3,mean(pres_cyc.cl.3$min_pressure[idx]))
-  idx <- which(as.integer(format(pres_cyc.cl.4$Date, '%m')) == i)
-  cluster_pres4 <- c(cluster_pres4,mean(pres_cyc.cl.4$min_pressure[idx]))
-  idx <- which(as.integer(format(pres_cyc.cl.5$Date, '%m')) == i)
-  cluster_pres5 <- c(cluster_pres5,mean(pres_cyc.cl.5$min_pressure[idx]))
-}
-
-```
-
-```{r}
-x <- seq(1,5)
-y <- seq(1,12)
-data <- expand.grid(X=x, Y=y)
-data$Z <- as.vector(t(matrix(c(cluster_pres1,cluster_pres2,cluster_pres3,cluster_pres4,cluster_pres5), nrow = 12,ncol = 5)))
-
-levelplot(Z ~ Y*X, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'BuPu')))
-grid.text("Min pressure", .94, .13)
-```
-
-```{r}
-wind.cl.1 <- c()
-wind.cl.2 <- c()
-wind.cl.3 <- c()
-wind.cl.4 <- c()
-wind.cl.5 <- c()
-
-idx.cl1 <- match(cyclones.cl.1$Date, wind$Date)[!is.na(match(cyclones.cl.1$Date, wind$Date))]
-idx.cl2 <- match(cyclones.cl.2$Date, wind$Date)[!is.na(match(cyclones.cl.2$Date, wind$Date))]
-idx.cl3 <- match(cyclones.cl.3$Date, wind$Date)[!is.na(match(cyclones.cl.3$Date, wind$Date))]
-idx.cl4 <- match(cyclones.cl.4$Date, wind$Date)[!is.na(match(cyclones.cl.4$Date, wind$Date))]
-idx.cl5 <- match(cyclones.cl.5$Date, wind$Date)[!is.na(match(cyclones.cl.5$Date, wind$Date))]
-wind.cl.1$sustained_wind <- wind$sustained_wind[idx.cl1]
-wind.cl.2$sustained_wind <- wind$sustained_wind[idx.cl2]
-wind.cl.3$sustained_wind <- wind$sustained_wind[idx.cl3]
-wind.cl.4$sustained_wind <- wind$sustained_wind[idx.cl4]
-wind.cl.5$sustained_wind <- wind$sustained_wind[idx.cl5]
-
-wind.cl.1$Date <- wind$Date[idx.cl1]
-wind.cl.2$Date <- wind$Date[idx.cl2]
-wind.cl.3$Date <- wind$Date[idx.cl3]
-wind.cl.4$Date <- wind$Date[idx.cl4]
-wind.cl.5$Date <- wind$Date[idx.cl5]
-
-boxplot(c(wind.cl.1$sustained_wind , wind.cl.2$sustained_wind , wind.cl.3$sustained_wind , wind.cl.4$sustained_wind , wind.cl.5$sustained_wind )~ c(rep("1", length(wind.cl.1$sustained_wind )),rep("2", length(wind.cl.2$sustained_wind )),rep("3", length(wind.cl.3$sustained_wind )),rep("4", length(wind.cl.4$sustained_wind )),rep("5", length(wind.cl.5$sustained_wind ))), main = "Mean sustained winds for each cluster", xlab = "Cluster", ylab = "Min Pressure (mb)")
-```
-
-
-```{r}
-cluster_wind1 <- c()
-cluster_wind2 <- c()
-cluster_wind3 <- c()
-cluster_wind4 <- c()
-cluster_wind5 <- c()
-for (i in c(1:12)) {
-
-  idx <- which(as.integer(format(wind.cl.1$Date, '%m')) == i)
-  cluster_wind1 <- c(cluster_wind1,mean(wind.cl.1$sustained_wind[idx]))
-  idx <- which(as.integer(format(wind.cl.2$Date, '%m')) == i)
-  cluster_wind2 <- c(cluster_wind2,mean(wind.cl.2$sustained_wind[idx]))
-  idx <- which(as.integer(format(wind.cl.3$Date, '%m')) == i)
-  cluster_wind3 <- c(cluster_wind3,mean(wind.cl.3$sustained_wind[idx]))
-  idx <- which(as.integer(format(wind.cl.4$Date, '%m')) == i)
-  cluster_wind4 <- c(cluster_wind4,mean(wind.cl.4$sustained_wind[idx]))
-  idx <- which(as.integer(format(wind.cl.5$Date, '%m')) == i)
-  cluster_wind5 <- c(cluster_wind5,mean(wind.cl.5$sustained_wind[idx]))
-}
-x <- seq(1,5)
-y <- seq(1,12)
-data <- expand.grid(X=x, Y=y)
-data$Z <- as.vector(t(matrix(c(cluster_wind1,cluster_wind2,cluster_wind3,cluster_wind4,cluster_wind5), nrow = 12,ncol = 5)))
-
-levelplot(Z ~ Y*X, data=data  ,xlab="WT", ylab = "Month",
-          main="", col.regions = rev(hcl.colors(100,palette = 'YlGnBu')))
-grid.text("MSWS", .94, .13)
-```
-
-
-```{r}
-b <- boxplot(aggregateGrid(pp_reanalysis, aggr.lat = list(FUN = "mean"), aggr.lon = list(FUN = "mean"))$Data~kmModel5$cluster, main = "Precipitation Data for each cluster")
-```
-
-```{r}
-violinPlot("Cluster1" = subsetGrid(kmedias.pp, members = 1), "Cluster2" = subsetGrid(kmedias.pp, members = 2),"Cluster3" = subsetGrid(kmedias.pp, members = 3),"Cluster4" = subsetGrid(kmedias.pp, members = 4), "Cluster5" = subsetGrid(kmedias.pp, members = 5))
-```
 
