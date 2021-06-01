@@ -1,0 +1,19 @@
+#!/bin/bash
+### Job name
+#PBS -N SOM_clustering
+### Max run time
+#PBS -l walltime=48:00:00
+### Max memory
+#PBS -l mem=20 gb
+### Queue name 
+#PBS -q bamd
+### Job mail
+#PBS -m bea
+#PBS -M mironeso@unican.es
+### Number of nodes and processors per node
+###PBS -l nodes=1:ppn=7
+
+WORKDIR=/vols/abedul/meteo/mironeso/trmm
+cd $WORKDIR
+
+R -f ./som_dummy_script.R >& ./log.${PBS_JOBID}.log

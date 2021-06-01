@@ -27,7 +27,7 @@ library(ggplot2)
 if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
   dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
 }else{
-  dir <- "/vols/abedul/meteo/mironeso/trmm"
+  dir <- "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering"
 }
 ```
 
@@ -48,13 +48,22 @@ idx.diff.msl <- which(attributes(pca$diff_msl[[1]])$explained_variance >= .9)[1]
 pca.matrix <- cbind(pca$tp[[1]]$PCs[,1:idx.tp],pca$msl[[1]]$PCs[,1:idx.msl],pca$diff_msl[[1]]$PCs[,1:idx.diff.msl])
 
 k = 5
-load('C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData')
+load('kmModel5.RData')
 
-precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+if (dir == "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering") {
+  precip_obs <- loadStationData("SP_ascii.zip", var = "precip_obs")
+}else{
+  precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs") 
+}
 ```
 
 ```{r}
-precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+
+if (dir == "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering") {
+  precip_trmm <- loadStationData("SP_ascii.zip", var = "precip_trmm")
+}else{
+  precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm") 
+}
 kmModel5$cluster <- kmModel5$cluster[1:8034]
 
 ```

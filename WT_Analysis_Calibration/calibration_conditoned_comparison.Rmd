@@ -26,10 +26,10 @@ library(raster)
 library(rasterVis)
 library(sp)
 
-if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
-  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration"
 }else{
-  dir <- "/vols/abedul/meteo/mironeso/trmm"
+  dir <- "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering"
 }
 
 ```
@@ -52,8 +52,8 @@ k = 5
 kmModel5 <- kmeans(pca.matrix, centers = k, nstart = 10)
 
 kmModel5$cluster <- kmModel5$cluster[1:8034]
-precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
-precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+precip_obs <- loadStationData("SP_ascii.zip", var = "precip_obs")
+precip_trmm <- loadStationData("SP_ascii.zip", var = "precip_trmm")
 
 ```
 

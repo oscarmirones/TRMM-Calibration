@@ -26,18 +26,32 @@ library(evd)
 library(formattable) #neccessary to create tables with colors
 library(lubridate) #neccessary to calculate differences in years between dates
 ```
+
+```{r}
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+}else{
+  dir <- "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering"
+}
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = dir)
+```
+
 ```{r}
 set.seed(42)
 ```
 
+
 PCA data from other notebook is loaded.
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+load("pca.RData")
 ```
 
 Reanalysis data is loaded to compute later the spatialPlot of the clusters.
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+load("pp_reanalysis.RData")
 
 ```
 
@@ -75,7 +89,12 @@ summary(kmModel5)
 ```
 Station locations are plotted with their corresponding codes.
 ```{r}
-stationInfo("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip")
+if (dir =="/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering" ) {
+  stationInfo("/SP_ascii.zip")
+}else{
+  stationInfo("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip")
+}
+
 ```
 
 
@@ -129,21 +148,27 @@ MaxReturnValue <- function(data){
   }
 ```
 
-```{r}
-#load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
-#pp_reanalysis <- subsetYears(pp_reanalysis, years = 1998:2019)
-#pp_reanalysis$Data <- pp_reanalysis$Data*24
-```
+
 
 Finally, PACRAIN and TRMM precipitation data is loaded using loadeR funciton loadStationData. This data readout is easy and fast since both datasets are established in a ASCII format for each of the 7 PACRAIN station existing in our target area. Obviously, precip_obs is related with PACRAIN data and precip_trmm with TRMM data.
 
 ```{r}
-precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+if (dir =="/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering" ) {
+  precip_obs <- loadStationData("SP_ascii.zip", var = "precip_obs")
+}else{
+  precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_obs")
+}
+
 
 ```
 
 ```{r}
-precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+if (dir =="/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering" ) {
+  precip_trmm <- loadStationData("SP_ascii.zip", var = "precip_trmm")
+}else{
+  precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/TRMM-time-series/WT_Analysis_Calibration/SP_ascii.zip", var = "precip_trmm")
+}
+
 
 ```
 # Assessment in PACRAIN stations
@@ -160,16 +185,7 @@ station.trmm <- subsetGrid(precip_trmm, station.id = precip_trmm$Metadata$statio
 station.obs <- subsetGrid(precip_obs, station.id = precip_trmm$Metadata$station_id[i])
 ```
 
-```{r}
-# idx <- which.min(abs(pp_reanalysis$xyCoords$x - station.obs$xyCoords$x))
-#  
-# lon <- pp_reanalysis$xyCoords$x[idx]
-#   
-# idx2 <- which.min(abs(pp_reanalysis$xyCoords$y - station.obs$xyCoords$y))
-# lat <- pp_reanalysis$xyCoords$y[idx2]
-#   
-# station.reanalysis <- subsetGrid(pp_reanalysis, lonLim = lon, latLim = lat)
-```
+
 
 ```{r}
 temporalPlot(station.obs,station.trmm, xyplot.custom = list(main = paste("Precipitation in",station.trmm$Metadata$name,"(elevation",precip_trmm$Metadata$altitude[i],"m)"), ylab = "mm"))

@@ -3,6 +3,18 @@ title: "Maps of k-means over PCA of reanalysis, slp and diff slp data."
 output: html_notebook
 ---
 
+```{r}
+if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
+  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
+}else{
+  dir <- "/vols/seal/oceano/gmeteo/WORK/juaco/trmm/clustering"
+}
+```
+
+```{r setup}
+knitr::opts_knit$set(root.dir = dir)
+```
+
 ```{r eval=TRUE, message=FALSE}
 library(loadeR)
 library(transformeR)
@@ -19,7 +31,7 @@ set.seed(42)
 ```
 
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.RData")
+load("pca.RData")
 ```
 
 ```{r}
@@ -40,23 +52,20 @@ plot(attributes(pca$diff_msl[[1]])$explained_variance, main = "Cumulative Explai
 ```
 
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+load("pp_reanalysis.RData")
 ```
 
 ```{r}
 pp_reanalysis <- udConvertGrid(pp_reanalysis, new.units = "mm")
 ```
 
+
 ```{r}
-#save(pp_reanalysis, file = "C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+load("slp.RData")
 ```
 
 ```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/slp.RData")
-```
-
-```{r}
-load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/diff_slp.RData")
+load("diff_slp.RData")
 ```
 
 ```{r}
