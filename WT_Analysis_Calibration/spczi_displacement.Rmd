@@ -1,0 +1,208 @@
+---
+title: "SCPZ displacement"
+output: html_notebook
+---
+
+
+
+```{r}
+library(loadeR)
+library(transformeR)
+library(visualizeR)
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/slp.RData")
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData")
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pp_reanalysis.RData")
+```
+
+```{r}
+computeSPI <- function(slp, time.scale = "daily", season = "complete", export.csv = FALSE){
+  if (time.scale %in% c("daily", "monthly", "annual")){
+    if(season %in% c("complete", "wet")){
+      if(season == "wet"){
+        
+        s <- c(11,12,1,2,3,4)
+        slp <- subsetGrid(slp, season = s)
+        
+      }
+      if(time.scale == "daily"){
+        
+        apia.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(-171.7666636)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-13.83333)))])
+        
+        suva.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(178.44149)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-18.1416)))])
+        
+        spi <- scale(suva.slp$Data - apia.slp$Data)
+        
+        df <- data.frame(apia.slp$Dates$start, spi)
+        name <- "daily_spi.csv"
+        
+      }else if(time.scale == "monthly"){
+        
+        slp <- aggregateGrid(slp , aggr.m = list(FUN ="mean"))
+        
+        apia.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(-171.7666636)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-13.83333)))])
+        
+        suva.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(178.44149)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-18.1416)))])
+        
+        spi <- scale(suva.slp$Data - apia.slp$Data)
+        
+        df <- data.frame(apia.slp$Dates$start, spi)
+        
+        name <- "monthly_spi.csv"
+        
+      }else{
+        
+        slp <- aggregateGrid(slp , aggr.m = list(FUN ="mean"), aggr.y = list(FUN = "mean"))
+        
+        apia.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(-171.7666636)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-13.83333)))])
+        
+        suva.slp <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(178.44149)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-18.1416)))])
+        
+        spi <- scale(suva.slp$Data - apia.slp$Data)
+        
+        df <- data.frame(apia.slp$Dates$start, spi)
+        name <- "annual_spi.csv"
+        
+      }
+      
+      if(export.csv == TRUE){
+        write.csv(df, name)
+      }
+      
+      return(df)
+    }else{
+      stop("Season selected is not correct.")
+    }
+    
+  }else{
+      stop("The time scale is not valid!")
+  }
+  
+  
+}
+
+```
+
+# Cluster 1
+
+```{r}
+cl1.slp <- subsetDimension(slp, dimension = "time", indices = kmModel5$cluster == 1)
+
+cl1.slp.apia <- subsetGrid(cl1.slp, lonLim = cl1.slp$xyCoords$x[which.min(abs(cl1.slp$xyCoords$x-(-171.7666636)))], latLim = cl1.slp$xyCoords$y[which.min(abs(cl1.slp$xyCoords$y-(-13.83333)))])
+cl1.slp.suva <- subsetGrid(cl1.slp, lonLim = cl1.slp$xyCoords$x[which.min(abs(cl1.slp$xyCoords$x-(178.44149)))], latLim = cl1.slp$xyCoords$y[which.min(abs(cl1.slp$xyCoords$y-(-18.1416)))])
+cl1.pp <- subsetDimension(pp_reanalysis, dimension = "time", indices = kmModel5$cluster == 1)
+
+cl1.spi <- scale(cl1.slp.suva$Data - cl1.slp.apia$Data)
+
+```
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at positive phase")
+```
+
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
+```
+
+# Cluster 2
+
+```{r}
+cl2.slp <- subsetDimension(slp, dimension = "time", indices = kmModel5$cluster == 2)
+
+cl2.slp.apia <- subsetGrid(cl2.slp, lonLim = cl2.slp$xyCoords$x[which.min(abs(cl2.slp$xyCoords$x-(-171.7666636)))], latLim = cl2.slp$xyCoords$y[which.min(abs(cl2.slp$xyCoords$y-(-13.83333)))])
+cl2.slp.suva <- subsetGrid(cl2.slp, lonLim = cl2.slp$xyCoords$x[which.min(abs(cl2.slp$xyCoords$x-(178.44149)))], latLim = cl2.slp$xyCoords$y[which.min(abs(cl2.slp$xyCoords$y-(-18.1416)))])
+cl2.pp <- subsetDimension(pp_reanalysis, dimension = "time", indices = kmModel5$cluster == 2)
+
+cl2.spi <- scale(cl2.slp.suva$Data - cl2.slp.apia$Data)
+
+```
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at positive phase")
+```
+
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
+```
+
+# Cluster 3
+
+```{r}
+cl3.slp <- subsetDimension(slp, dimension = "time", indices = kmModel5$cluster == 3)
+
+cl3.slp.apia <- subsetGrid(cl3.slp, lonLim = cl3.slp$xyCoords$x[which.min(abs(cl3.slp$xyCoords$x-(-171.7666636)))], latLim = cl3.slp$xyCoords$y[which.min(abs(cl3.slp$xyCoords$y-(-13.83333)))])
+cl3.slp.suva <- subsetGrid(cl3.slp, lonLim = cl3.slp$xyCoords$x[which.min(abs(cl3.slp$xyCoords$x-(178.44149)))], latLim = cl3.slp$xyCoords$y[which.min(abs(cl3.slp$xyCoords$y-(-18.1416)))])
+cl3.pp <- subsetDimension(pp_reanalysis, dimension = "time", indices = kmModel5$cluster == 3)
+
+cl3.spi <- scale(cl3.slp.suva$Data - cl3.slp.apia$Data)
+
+```
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at positive phase")
+```
+
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
+```
+
+# Cluster 4
+
+```{r}
+cl4.slp <- subsetDimension(slp, dimension = "time", indices = kmModel5$cluster == 4)
+
+cl4.slp.apia <- subsetGrid(cl4.slp, lonLim = cl4.slp$xyCoords$x[which.min(abs(cl4.slp$xyCoords$x-(-171.7666636)))], latLim = cl4.slp$xyCoords$y[which.min(abs(cl4.slp$xyCoords$y-(-13.83333)))])
+cl4.slp.suva <- subsetGrid(cl4.slp, lonLim = cl4.slp$xyCoords$x[which.min(abs(cl4.slp$xyCoords$x-(178.44149)))], latLim = cl4.slp$xyCoords$y[which.min(abs(cl4.slp$xyCoords$y-(-18.1416)))])
+cl4.pp <- subsetDimension(pp_reanalysis, dimension = "time", indices = kmModel5$cluster == 4)
+
+cl4.spi <- scale(cl4.slp.suva$Data - cl4.slp.apia$Data)
+
+```
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at positive phase")
+```
+
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
+```
+
+# Cluster 5
+
+```{r}
+cl5.slp <- subsetDimension(slp, dimension = "time", indices = kmModel5$cluster == 5)
+
+cl5.slp.apia <- subsetGrid(cl5.slp, lonLim = cl5.slp$xyCoords$x[which.min(abs(cl5.slp$xyCoords$x-(-171.7666636)))], latLim = cl5.slp$xyCoords$y[which.min(abs(cl5.slp$xyCoords$y-(-13.83333)))])
+cl5.slp.suva <- subsetGrid(cl5.slp, lonLim = cl5.slp$xyCoords$x[which.min(abs(cl5.slp$xyCoords$x-(178.44149)))], latLim = cl5.slp$xyCoords$y[which.min(abs(cl5.slp$xyCoords$y-(-18.1416)))])
+cl5.pp <- subsetDimension(pp_reanalysis, dimension = "time", indices = kmModel5$cluster == 5)
+
+cl5.spi <- scale(cl5.slp.suva$Data - cl5.slp.apia$Data)
+
+```
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at positive phase")
+```
+
+
+```{r}
+spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0))),
+            rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
+```
+
+
