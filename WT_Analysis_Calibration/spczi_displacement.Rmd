@@ -1,6 +1,10 @@
 ---
 title: "SCPZ displacement"
-output: html_notebook
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+    toc_depth: 5
 ---
 
 
@@ -204,5 +208,7 @@ spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = wh
 spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0))),
             rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
 ```
+
+
 
 
