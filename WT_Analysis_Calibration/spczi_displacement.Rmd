@@ -13,8 +13,9 @@ output:
 library(loadeR)
 library(transformeR)
 library(visualizeR)
+library(clue)
 ```
-
+# Period 1998-2020
 ```{r}
 load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/slp.RData")
 load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/kmModel5.RData")
@@ -208,7 +209,315 @@ spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = wh
 spatialPlot(climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0))),
             rev.colors = T, backdrop.theme = 'countries', main = "SPCZ at negative phase")
 ```
+```{r}
+cl1.diff <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < 0)))
+cl1.diff$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < 0)))$Data - climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > 0)))$Data
+
+spatialPlot(cl1.diff,rev.colors = T, backdrop.theme = 'countries', center = 0,main = "SPI Phase Diff SPCZ Cl1", center = 0, color.theme = 'RdBu')
+```
+
+```{r}
+cl2.diff <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < 0)))
+cl2.diff$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < 0)))$Data - climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > 0)))$Data
+
+spatialPlot(cl2.diff,rev.colors = T, backdrop.theme = 'countries', center = 0,main = "SPI Phase Diff SPCZ Cl2", center = 0, color.theme = 'RdBu')
+```
+
+```{r}
+cl3.diff <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0)))
+cl3.diff$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0)))$Data - climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > 0)))$Data
+
+spatialPlot(cl3.diff,rev.colors = T, backdrop.theme = 'countries', center = 0,main = "SPI Phase Diff SPCZ Cl3", color.theme = 'RdBu')
+```
+
+```{r}
+cl4.diff <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < 0)))
+cl4.diff$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < 0)))$Data - climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > 0)))$Data
+
+spatialPlot(cl4.diff,rev.colors = T, backdrop.theme = 'countries', main = "SPI Phase Diff SPCZ Cl4", center = 0,color.theme = 'RdBu')
+```
+
+```{r}
+cl5.diff <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0)))
+cl5.diff$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0)))$Data - climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > 0)))$Data
+
+spatialPlot(cl5.diff,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "SPI Phase Diff SPCZ Cl5",color.theme = 'RdBu')
+```
+
+```{r}
+mg <- makeMultiGrid(cl1.diff,cl2.diff,cl3.diff,cl4.diff,cl5.diff, skip.temporal.check = T)
+```
+
+```{r}
+spatialPlot(mg, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu')
+```
+```{r}
+cl1.diff.neg <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < 0)))
+cl1.diff.neg$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < 0)))$Data - climatology(cl1.pp)$Data
+
+spatialPlot(cl1.diff.neg,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI- phase Cl1",color.theme = 'RdBu')
+```
+
+```{r}
+cl2.diff.neg <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < 0)))
+cl2.diff.neg$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < 0)))$Data - climatology(cl2.pp)$Data
+
+spatialPlot(cl2.diff.neg,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI- phase Cl2",color.theme = 'RdBu')
+```
+
+```{r}
+cl3.diff.neg <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0)))
+cl3.diff.neg$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0)))$Data - climatology(cl3.pp)$Data
+
+spatialPlot(cl3.diff.neg,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI- phase Cl3",color.theme = 'RdBu')
+```
+
+```{r}
+cl4.diff.neg <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < 0)))
+cl4.diff.neg$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < 0)))$Data - climatology(cl4.pp)$Data
+
+spatialPlot(cl4.diff.neg,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI- phase Cl4",color.theme = 'RdBu')
+```
 
 
+```{r}
+cl5.diff.neg <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0)))
+cl5.diff.neg$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < 0)))$Data - climatology(cl5.pp)$Data
+
+spatialPlot(cl5.diff.neg,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI- phase Cl5",color.theme = 'RdBu')
+```
+
+```{r}
+mg <- makeMultiGrid(cl1.diff.neg,cl2.diff.neg,cl3.diff.neg,cl4.diff.neg,cl5.diff.neg, skip.temporal.check = T)
+```
+
+```{r}
+spatialPlot(mg, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu', at = seq(-6.5,6.5,.5))
+```
+```{r}
+cl1.diff.pos <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > 0)))
+cl1.diff.pos$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > 0)))$Data - climatology(cl1.pp)$Data
+
+spatialPlot(cl1.diff.pos,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI+ phase Cl1",color.theme = 'RdBu')
+```
+
+```{r}
+cl2.diff.pos <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > 0)))
+cl2.diff.pos$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > 0)))$Data - climatology(cl2.pp)$Data
+
+spatialPlot(cl2.diff.pos,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI+ phase Cl2",color.theme = 'RdBu')
+```
+
+```{r}
+cl3.diff.pos <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > 0)))
+cl3.diff.pos$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > 0)))$Data - climatology(cl3.pp)$Data
+
+spatialPlot(cl3.diff.pos,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI+ phase Cl3",color.theme = 'RdBu')
+```
+
+```{r}
+cl4.diff.pos <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > 0)))
+cl4.diff.pos$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > 0)))$Data - climatology(cl4.pp)$Data
+
+spatialPlot(cl4.diff.pos,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI+ phase Cl4",color.theme = 'RdBu')
+```
+
+
+```{r}
+cl5.diff.pos <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > 0)))
+cl5.diff.pos$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > 0)))$Data - climatology(cl5.pp)$Data
+
+spatialPlot(cl5.diff.pos,rev.colors = T, backdrop.theme = 'countries', center = 0, main = "Anomalies SPI+ phase Cl5",color.theme = 'RdBu')
+```
+
+```{r}
+mg <- makeMultiGrid(cl1.diff.pos,cl2.diff.pos,cl3.diff.pos,cl4.diff.pos,cl5.diff.pos, skip.temporal.check = T)
+```
+
+```{r}
+spatialPlot(mg, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu', at = seq(-6.5, 6.5, 0.5))
+```
+
+
+```{r}
+slp.apia <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(-171.7666636)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-13.83333)))])
+slp.suva <- subsetGrid(slp, lonLim = slp$xyCoords$x[which.min(abs(slp$xyCoords$x-(178.44149)))], latLim = slp$xyCoords$y[which.min(abs(slp$xyCoords$y-(-18.1416)))])
+
+spi <- scale(slp.suva$Data - slp.apia$Data)
+
+```
+
+```{r}
+terciles <- quantile(spi, probs = c(1/3, 2/3))
+
+```
+
+
+```{r}
+cl1.diff.neg <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < terciles[1])))
+cl1.diff.neg$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi < terciles[1])))$Data - climatology(cl1.pp)$Data
+cl1.diff.pos<- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > terciles[2])))
+cl1.diff.pos$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which(cl1.spi > terciles[2])))$Data - climatology(cl1.pp)$Data
+cl1.diff.neutral<- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which((cl1.spi < terciles[2]) & (cl1.spi > terciles[1]))))
+cl1.diff.neutral$Data <- climatology(subsetDimension(cl1.pp, dimension = "time", indices = which((cl1.spi < terciles[2]) & (cl1.spi > terciles[1]))))$Data - climatology(cl1.pp)$Data
+
+cl2.diff.neg <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < terciles[1])))
+cl2.diff.neg$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi < terciles[1])))$Data - climatology(cl2.pp)$Data
+cl2.diff.pos<- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > terciles[2])))
+cl2.diff.pos$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which(cl2.spi > terciles[2])))$Data - climatology(cl2.pp)$Data
+cl2.diff.neutral<- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which((cl2.spi < terciles[2]) & (cl2.spi > terciles[1]))))
+cl2.diff.neutral$Data <- climatology(subsetDimension(cl2.pp, dimension = "time", indices = which((cl2.spi < terciles[2]) & (cl2.spi > terciles[1]))))$Data - climatology(cl2.pp)$Data
+
+cl3.diff.neg <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < terciles[1])))
+cl3.diff.neg$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi < 0)))$Data - climatology(cl3.pp)$Data
+cl3.diff.pos<- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > terciles[2])))
+cl3.diff.pos$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which(cl3.spi > terciles[2])))$Data - climatology(cl3.pp)$Data
+cl3.diff.neutral<- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which((cl3.spi < terciles[2]) & (cl3.spi > terciles[1]))))
+cl3.diff.neutral$Data <- climatology(subsetDimension(cl3.pp, dimension = "time", indices = which((cl3.spi < terciles[2]) & (cl3.spi > terciles[1]))))$Data - climatology(cl3.pp)$Data
+
+cl4.diff.neg <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < terciles[1])))
+cl4.diff.neg$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi < terciles[1])))$Data - climatology(cl4.pp)$Data
+cl4.diff.pos<- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > terciles[2])))
+cl4.diff.pos$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which(cl4.spi > terciles[2])))$Data - climatology(cl4.pp)$Data
+cl4.diff.neutral<- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which((cl4.spi < terciles[2]) & (cl4.spi > terciles[1]))))
+cl4.diff.neutral$Data <- climatology(subsetDimension(cl4.pp, dimension = "time", indices = which((cl4.spi < terciles[2]) & (cl4.spi > terciles[1]))))$Data - climatology(cl4.pp)$Data
+
+
+cl5.diff.neg <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < terciles[1])))
+cl5.diff.neg$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi < terciles[1])))$Data - climatology(cl5.pp)$Data
+cl5.diff.pos<- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > terciles[2])))
+cl5.diff.pos$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which(cl5.spi > terciles[2])))$Data - climatology(cl5.pp)$Data
+cl5.diff.neutral<- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which((cl5.spi < terciles[2]) & (cl5.spi > terciles[1]))))
+cl5.diff.neutral$Data <- climatology(subsetDimension(cl5.pp, dimension = "time", indices = which((cl5.spi < terciles[2]) & (cl5.spi > terciles[1]))))$Data - climatology(cl5.pp)$Data
+```
+
+```{r}
+mg.neg <- makeMultiGrid(cl1.diff.neg,cl2.diff.neg,cl3.diff.neg,cl4.diff.neg,cl5.diff.neg, skip.temporal.check = T)
+
+mg.pos <- makeMultiGrid(cl1.diff.pos,cl2.diff.pos,cl3.diff.pos,cl4.diff.pos,cl5.diff.pos, skip.temporal.check = T)
+
+mg.neutral <- makeMultiGrid(cl1.diff.neutral,cl2.diff.neutral,cl3.diff.neutral,cl4.diff.neutral,cl5.diff.neutral, skip.temporal.check = T)
+```
+
+```{r}
+spatialPlot(mg.neg, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu', at = seq(-8,8,.5))
+```
+```{r}
+spatialPlot(mg.pos, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu', at = seq(-7,7,.5))
+```
+
+```{r}
+spatialPlot(mg.neutral, rev.colors = T , backdrop.theme = 'countries', names.attr = c("WT1","WT2","WT3","WT4","WT5"), center = 0, color.theme = 'RdBu', at = seq(-3,3,.5))
+```
+
+```{r}
+big.mg <- makeMultiGrid(cl1.diff.neg,cl1.diff.neutral,cl1.diff.pos,cl2.diff.neg,cl2.diff.neutral,cl2.diff.pos,cl3.diff.neg,cl3.diff.neutral,cl3.diff.pos,cl4.diff.neg,cl4.diff.neutral,cl4.diff.pos,cl5.diff.neg,cl5.diff.neutral,cl5.diff.pos, skip.temporal.check = T)
+```
+
+
+```{r}
+spatialPlot(big.mg,rev.colors = T , backdrop.theme = 'countries',color.theme = 'RdBu', at = seq(-8,8,.5), layout = c(3,5),colorkey = list(space ="bottom",height=1, width=1), names.attr = c("WT1 T1","WT1 T2","WT1 T3","WT2 T1","WT2 T2","WT2 T3","WT3 T1","WT3 T2","WT3 T3","WT4 T1","WT4 T2","WT4 T3","WT5 T1","WT5 T2","WT5 T3"), as.table = T)
+```
+
+
+```{r}
+cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1998_2020.csv')
+cyclones$Date <- as.Date(cyclones$Date)
+cyclones <- cyclones[,2:3]
+```
+
+```{r}
+cyclones.cl1 <- cyclones[which(kmModel5$cluster == 1),]
+cyclones.cl2 <- cyclones[which(kmModel5$cluster == 2),]
+cyclones.cl3 <- cyclones[which(kmModel5$cluster == 3),]
+cyclones.cl4 <- cyclones[which(kmModel5$cluster == 4),]
+cyclones.cl5 <- cyclones[which(kmModel5$cluster == 5),]
+```
+
+```{r}
+cyclones.cl1.pos <- cyclones.cl1[which(cl1.spi > terciles[2]),]
+cyclones.cl1.med <- cyclones.cl1[which((cl1.spi < terciles[2]) & (cl1.spi > terciles[1])),]
+cyclones.cl1.neg <- cyclones.cl1[which(cl1.spi < terciles[1]),]
+```
+
+```{r}
+barplot(c(sum(cyclones.cl1.neg$cyclones_generation_centers), sum(cyclones.cl1.med$cyclones_generation_centers), sum(cyclones.cl1.pos$cyclones_generation_centers)),
+        names.arg = c("WT1-T1", "WT1-T2", "WT1-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+
+```{r}
+cyclones.cl2.pos <- cyclones.cl2[which(cl2.spi > terciles[2]),]
+cyclones.cl2.med <- cyclones.cl2[which((cl2.spi < terciles[2]) & (cl2.spi > terciles[1])),]
+cyclones.cl2.neg <- cyclones.cl2[which(cl2.spi < terciles[1]),]
+```
+
+```{r}
+barplot(c(sum(cyclones.cl2.neg$cyclones_generation_centers), sum(cyclones.cl2.med$cyclones_generation_centers), sum(cyclones.cl2.pos$cyclones_generation_centers)),
+        names.arg = c("WT2-T1", "WT2-T2", "WT2-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+
+```{r}
+cyclones.cl3.pos <- cyclones.cl3[which(cl3.spi > terciles[2]),]
+cyclones.cl3.med <- cyclones.cl3[which((cl3.spi < terciles[2]) & (cl3.spi > terciles[1])),]
+cyclones.cl3.neg <- cyclones.cl3[which(cl3.spi < terciles[1]),]
+```
+
+```{r}
+barplot(c(sum(cyclones.cl3.neg$cyclones_generation_centers), sum(cyclones.cl3.med$cyclones_generation_centers), sum(cyclones.cl3.pos$cyclones_generation_centers)),
+        names.arg = c("WT3-T1", "WT3-T2", "WT3-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+
+
+```{r}
+cyclones.cl4.pos <- cyclones.cl4[which(cl4.spi > terciles[2]),]
+cyclones.cl4.med <- cyclones.cl4[which((cl4.spi < terciles[2]) & (cl4.spi > terciles[1])),]
+cyclones.cl4.neg <- cyclones.cl4[which(cl4.spi < terciles[1]),]
+```
+
+```{r}
+barplot(c(sum(cyclones.cl4.neg$cyclones_generation_centers), sum(cyclones.cl4.med$cyclones_generation_centers), sum(cyclones.cl4.pos$cyclones_generation_centers)),
+        names.arg = c("WT4-T1", "WT4-T2", "WT4-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+
+
+```{r}
+cyclones.cl5.pos <- cyclones.cl5[which(cl5.spi > terciles[2]),]
+cyclones.cl5.med <- cyclones.cl5[which((cl5.spi < terciles[2]) & (cl5.spi > terciles[1])),]
+cyclones.cl5.neg <- cyclones.cl5[which(cl5.spi < terciles[1]),]
+```
+
+```{r}
+barplot(c(sum(cyclones.cl5.neg$cyclones_generation_centers), sum(cyclones.cl5.med$cyclones_generation_centers), sum(cyclones.cl5.pos$cyclones_generation_centers)),
+        names.arg = c("WT5-T1", "WT5-T2", "WT5-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+
+```{r}
+par(mfrow=c(2,3))
+
+barplot(c(sum(cyclones.cl1.neg$cyclones_generation_centers), sum(cyclones.cl1.med$cyclones_generation_centers), sum(cyclones.cl1.pos$cyclones_generation_centers)),
+        names.arg = c("WT1-T1", "WT1-T2", "WT1-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+
+barplot(c(sum(cyclones.cl2.neg$cyclones_generation_centers), sum(cyclones.cl2.med$cyclones_generation_centers), sum(cyclones.cl2.pos$cyclones_generation_centers)),
+        names.arg = c("WT2-T1", "WT2-T2", "WT2-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+
+barplot(c(sum(cyclones.cl3.neg$cyclones_generation_centers), sum(cyclones.cl3.med$cyclones_generation_centers), sum(cyclones.cl3.pos$cyclones_generation_centers)),
+        names.arg = c("WT3-T1", "WT3-T2", "WT3-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+
+barplot(c(sum(cyclones.cl4.neg$cyclones_generation_centers), sum(cyclones.cl4.med$cyclones_generation_centers), sum(cyclones.cl4.pos$cyclones_generation_centers)),
+        names.arg = c("WT4-T1", "WT4-T2", "WT4-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+
+barplot(c(sum(cyclones.cl5.neg$cyclones_generation_centers), sum(cyclones.cl5.med$cyclones_generation_centers), sum(cyclones.cl5.pos$cyclones_generation_centers)),
+        names.arg = c("WT5-T1", "WT5-T2", "WT5-T3"), col = c("red","orange","blue"), ylab = "Nº cyclones generation centers")
+```
+```{r}
+vals <- cbind(c(sum(cyclones.cl1.neg$cyclones_generation_centers), sum(cyclones.cl1.med$cyclones_generation_centers), sum(cyclones.cl1.pos$cyclones_generation_centers)),c(sum(cyclones.cl2.neg$cyclones_generation_centers), sum(cyclones.cl2.med$cyclones_generation_centers), sum(cyclones.cl2.pos$cyclones_generation_centers)),c(sum(cyclones.cl3.neg$cyclones_generation_centers), sum(cyclones.cl3.med$cyclones_generation_centers), sum(cyclones.cl3.pos$cyclones_generation_centers)),c(sum(cyclones.cl4.neg$cyclones_generation_centers), sum(cyclones.cl4.med$cyclones_generation_centers), sum(cyclones.cl4.pos$cyclones_generation_centers)),c(sum(cyclones.cl5.neg$cyclones_generation_centers), sum(cyclones.cl5.med$cyclones_generation_centers), sum(cyclones.cl5.pos$cyclones_generation_centers)))
+```
+
+```{r}
+barplot(vals, beside = T, col = c("red", "orange","blue"), names.arg = c("WT1","WT2","WT3","WT4","WT5"))
+legend("topright", 
+       legend = c("T1", "T2", "T3"), 
+       fill = c("blue", "orange","red"))
+```
 
 
