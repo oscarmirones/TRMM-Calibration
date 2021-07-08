@@ -266,7 +266,7 @@ storm.gen <- function(dates, which.plot = NULL, alpha.value = .3){
       coordinates <- data[sep[[j]],4:3]
       if(dim(coordinates)[1] <= 1) next #si solo hay un centro de generación da error en map.lines
      
-      storms[[length(storms)+1]] <- map.lines(coords = coordinates, lwd = 2, col = alpha('grey',alpha.value),
+      storms[[length(storms)+1]] <- map.lines(coords = coordinates, lwd = 2, col = alpha('purple',alpha.value),
                                               which = which.plot)
     }
   }
@@ -401,4 +401,4 @@ storm.list <- list(storms.wt1.t1,storms.wt1.t2,storms.wt1.t3,storms.wt2.t1,storm
 
 spatialPlot(mg, backdrop.theme = "countries",rev.colors = F, color.theme = "BrBG",as.table = T, colorkey = list(space = "bottom", height = 1),
             names.attr = c("WT1 T1","WT1 T2","WT1 T3","WT2 T1","WT2 T2","WT2 T3","WT3 T1","WT3 T2","WT3 T3","WT4 T1","WT4 T2","WT4 T3","WT5 T1","WT5 T2","WT5 T3"),
-            set.max = 20, sp.layout = storm.list)
+            set.max = 20, sp.layout = storm.list, at = seq(0,18,1))
