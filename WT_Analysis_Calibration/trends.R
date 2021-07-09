@@ -62,6 +62,7 @@ ggplot(data = df, aes(x = Year)) +
 cor.mat <- cor(df[,2:6])
 
 library(lattice)
+library(ts)
 
 levelplot(cor.mat)
 
@@ -137,7 +138,7 @@ for (i in unique(wt5$Year)) {
 df.cyc <- data.frame(unique(data$Year), counts.cyc.wt1, counts.cyc.wt2, counts.cyc.wt3, counts.cyc.wt4, counts.cyc.wt5)
 colnames(df.cyc) <- c("Year", "WT1", "WT2", "WT3","WT4", "WT5")
 
-df.cyc <- df.cyc[2:42,]
+df.cyc 
 
 library(ggplot2)
 
@@ -165,11 +166,11 @@ for (i in unique(data$Year)) {
   counts.cyc <- c(counts.cyc,sum(cyclones[which(data$Year == i),]$cyclones_generation_centers))
 }
 
-plot(unique(data$Year)[2:42], counts.cyc[2:42], type = 'l', xlab = 'Year', ylab = 'Cyclone centers total nº')
+plot(unique(data$Year), counts.cyc, type = 'l', xlab = 'Year', ylab = 'Cyclone centers total nº')
 
 test <- matrix(NA, 1, 5)
 for (i in c(2:6)) {
-  test[1,i-1] <- cor(df.cyc[,i],counts.cyc[2:42])
+  test[1,i-1] <- cor(df.cyc[,i],counts.cyc)
 }
 
 colnames(test) <- colnames(df.cyc)[2:6]
