@@ -401,4 +401,4 @@ storm.list <- list(storms.wt1.t1,storms.wt1.t2,storms.wt1.t3,storms.wt2.t1,storm
 
 spatialPlot(mg, backdrop.theme = "countries",rev.colors = F, color.theme = "BrBG",as.table = T, colorkey = list(space = "bottom", height = 1),
             names.attr = c("WT1 T1","WT1 T2","WT1 T3","WT2 T1","WT2 T2","WT2 T3","WT3 T1","WT3 T2","WT3 T3","WT4 T1","WT4 T2","WT4 T3","WT5 T1","WT5 T2","WT5 T3"),
-            set.max = 20, sp.layout = storm.list, at = seq(0,18,1))
+            set.max = 18, sp.layout = storm.list, at = seq(0,18,1))

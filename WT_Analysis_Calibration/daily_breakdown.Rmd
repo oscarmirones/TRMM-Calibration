@@ -164,8 +164,9 @@ coordinates(cyc.data) <- ~ X+Y
 
 
 ```{r}
-levelplot(Z ~ X*Y, data=data  ,xlab="Season", ylab = "Years", scales=list(x=list(at=c(32,60,91,121,152,182,213,244,274,305,335), labels = c("Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
-          main="", col.regions = c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), at = 0:5) +
+levelplot(Z ~ X*Y, data=data  ,xlab="", ylab = "", scales=list(x=list(at=c(32,60,91,121,152,182,213,244,274,305,335), labels = c("Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
+          main="", col.regions = c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), at = 0:5,
+          colorkey = list(space ="bottom",height=1, width=1)) +
   layer(sp.points(cyc.data, pch = 21, cex = cyc.data$Z/50, col = 'white'))
 
 

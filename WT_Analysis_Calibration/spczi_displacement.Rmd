@@ -514,10 +514,12 @@ vals <- cbind(c(sum(cyclones.cl1.neg$cyclones_generation_centers), sum(cyclones.
 ```
 
 ```{r}
-barplot(vals, beside = T, col = c("red", "orange","blue"), names.arg = c("WT1","WT2","WT3","WT4","WT5"))
+barplot(vals, beside = T, col = c("red", "orange","blue"), names.arg = c("WT1","WT2","WT3","WT4","WT5"), 
+        horiz = T, xlab = "Number of cyclone generation centers")
 legend("topright", 
        legend = c("T1", "T2", "T3"), 
-       fill = c("blue", "orange","red"))
+       fill = c("blue", "orange","red"),
+       cex = 0.75)
 ```
 
 

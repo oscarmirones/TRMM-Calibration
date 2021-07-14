@@ -240,3 +240,271 @@ sctest(efp.m2)
 sctest(efp.m3)
 sctest(efp.m4)
 sctest(efp.m5)
+
+wt1.break <- breakpoints(ts.wt1 ~ 1)
+wt2.break <- breakpoints(ts.wt2 ~ 1)
+wt3.break <- breakpoints(ts.wt3 ~ 1)
+wt4.break <- breakpoints(ts.wt4 ~ 1)
+wt5.break <- breakpoints(ts.wt5 ~ 1)
+
+##wt1 two intervals
+summary(wt1.break)
+
+ts.wt1.b1 <- window(ts.wt1, start = 1979, end = 2012)
+ts.wt1.b2 <- window(ts.wt1, start = 2013, end = 2020)
+
+lm1.b1 <- lm(df[1:34,]$WT1 ~ df[1:34,]$Year + 0)
+lm1.b2 <- lm(df[35:42,]$WT1 ~ df[35:42,]$Year + 0)
+
+barplot(cbind(m1$coefficients, lm1.b1$coefficients, lm1.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT1", col = c("orange","red","blue"))
+##wt2 two intervals
+summary(wt2.break)
+
+ts.wt2.b1 <- window(ts.wt2, start = 1979, end = 1998)
+ts.wt2.b2 <- window(ts.wt2, start = 1999, end = 2020)
+
+lm2.b1 <- lm(df[1:20,]$WT2 ~ df[1:20,]$Year + 0)
+lm2.b2 <- lm(df[21:42,]$WT2 ~ df[21:42,]$Year + 0)
+
+barplot(cbind(m2$coefficients, lm2.b1$coefficients, lm2.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT2", col = c("orange","red","blue"))
+##wt3 two intervals
+summary(wt3.break)
+
+ts.wt3.b1 <- window(ts.wt3, start = 1979, end = 1998)
+ts.wt3.b2 <- window(ts.wt3, start = 1999, end = 2020)
+
+lm3.b1 <- lm(df[1:20,]$WT3 ~ df[1:20,]$Year + 0)
+lm3.b2 <- lm(df[21:42,]$WT3 ~ df[21:42,]$Year + 0)
+
+barplot(cbind(m3$coefficients, lm3.b1$coefficients, lm3.b2$coefficients),beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT3", col = c("orange","red","blue"))
+##wt4 two intervals
+summary(wt4.break)
+
+ts.wt4.b1 <- window(ts.wt4, start = 1979, end = 1991)
+ts.wt4.b2 <- window(ts.wt4, start = 1992, end = 2020)
+
+lm4.b1 <- lm(df[1:13,]$WT4 ~ df[1:13,]$Year + 0)
+lm4.b2 <- lm(df[14:42,]$WT4 ~ df[14:42,]$Year + 0)
+
+barplot(cbind(m4$coefficients, lm4.b1$coefficients, lm4.b2$coefficients),beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT4", col = c("orange","red","blue"))
+##wt5 two intervals
+summary(wt5.break)
+
+ts.wt5.b1 <- window(ts.wt5, start = 1979, end = 1998)
+ts.wt5.b2 <- window(ts.wt5, start = 1999, end = 2020)
+
+lm5.b1 <- lm(df[1:20,]$WT5 ~ df[1:20,]$Year + 0)
+lm5.b2 <- lm(df[21:42,]$WT5 ~ df[21:42,]$Year + 0)
+
+barplot(cbind(m5$coefficients, lm5.b1$coefficients, lm5.b2$coefficients),beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT5", col = c("orange","red","blue"))
+#Nile data example
+
+# data("Nile")
+# plot(Nile)
+# 
+# bp.nile <- breakpoints(Nile ~ 1)
+# summary(bp.nile)
+
+library(lubridate)
+
+############################monthly
+y <- unique(wt1$Year)
+m <- unique(wt1$Month)
+
+counts.wt1 <- c()
+for (i in y) {
+  y.idx <- which(wt1$Year == i)
+  for (j in m) {
+    m.idx <- which(wt1$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt1 <- c(counts.wt1,length(idx))
+  }  
+}
+
+y <- unique(wt2$Year)
+m <- unique(wt2$Month)
+
+counts.wt2 <- c()
+for (i in y) {
+  y.idx <- which(wt2$Year == i)
+  for (j in m) {
+    m.idx <- which(wt2$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt2 <- c(counts.wt2,length(idx))
+  }  
+}
+
+y <- unique(wt3$Year)
+m <- unique(wt3$Month)
+
+counts.wt3 <- c()
+for (i in y) {
+  y.idx <- which(wt3$Year == i)
+  for (j in m) {
+    m.idx <- which(wt3$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt3 <- c(counts.wt3,length(idx))
+  }  
+}
+
+y <- unique(wt4$Year)
+m <- unique(wt4$Month)
+
+counts.wt4 <- c()
+for (i in y) {
+  y.idx <- which(wt4$Year == i)
+  for (j in m) {
+    m.idx <- which(wt4$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt4 <- c(counts.wt4,length(idx))
+  }  
+}
+
+y <- unique(wt5$Year)
+m <- unique(wt5$Month)
+
+counts.wt5 <- c()
+for (i in y) {
+  y.idx <- which(wt5$Year == i)
+  for (j in m) {
+    m.idx <- which(wt5$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt5 <- c(counts.wt5,length(idx))
+  }  
+}
+
+yy <- c()
+for (i in unique(y)) {
+  yy <- c(yy, rep(i,12))
+}
+
+df <- data.frame(seq(1,504),yy, rep(seq(1:12),42), counts.wt1, counts.wt2, counts.wt3, counts.wt4, counts.wt5)
+colnames(df) <- c("Id","Year","Month", "WT1", "WT2", "WT3","WT4", "WT5")
+
+
+colors <- c("green","brown","red","blue","yellow")
+names(colors) <- colnames(df[3:7])
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT1, colour = "WT1")) + 
+  geom_line(aes(y = WT2, colour = "WT2")) +
+  geom_line(aes(y = WT3, colour = "WT3")) +
+  geom_line(aes(y = WT4, colour = "WT4")) +
+  geom_line(aes(y = WT5, colour = "WT5")) +
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT1, colour = "WT1")) + 
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT2, colour = "WT2")) + 
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT3, colour = "WT3")) + 
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT4, colour = "WT4")) + 
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+ggplot(data = df, aes(x = Id)) + 
+  geom_line(aes(x = Id, y = WT5, colour = "WT5")) + 
+  ylab("WT days")+
+  scale_color_manual(name = "WT",values =c(colors[1],colors[2],colors[3],colors[4],colors[5]))
+
+
+m1 <- lm(WT1 ~ Year + 0, data = df)
+m2 <- lm(WT2 ~ Year + 0, data = df)
+m3 <- lm(WT3 ~ Year + 0, data = df)
+m4 <- lm(WT4 ~ Year + 0, data = df)
+m5 <- lm(WT5 ~ Year + 0, data = df)
+
+
+summary(m1)
+summary(m2)
+summary(m3)
+summary(m4)
+summary(m5)
+
+ts.wt1 <- ts(df$WT1)
+ts.wt2 <- ts(df$WT2)
+ts.wt3 <- ts(df$WT3)
+ts.wt4 <- ts(df$WT4)
+ts.wt5 <- ts(df$WT5)
+
+wt1.bp <- breakpoints(ts.wt1 ~ 1)
+wt2.bp <- breakpoints(ts.wt2 ~ 1)
+wt3.bp <- breakpoints(ts.wt3 ~ 1)
+wt4.bp <- breakpoints(ts.wt4 ~ 1)
+wt5.bp <- breakpoints(ts.wt5 ~ 1)
+
+summary(wt1.bp)
+ts.wt1.b1 <- window(ts.wt1, start = 1, end = 423)
+ts.wt1.b2 <- window(ts.wt1, start = 424, end = 504)
+
+lm1.b1 <- lm(df[1:423,]$WT1 ~ df[1:423,]$Id + 0)
+lm1.b2 <- lm(df[424:504,]$WT1 ~ df[424:504,]$Id + 0)
+
+summary(wt2.bp)
+ts.wt2.b1 <- window(ts.wt2, start = 1, end = 249)
+ts.wt2.b2 <- window(ts.wt2, start = 250, end = 504)
+
+lm2.b1 <- lm(df[1:249,]$WT2 ~ df[1:249,]$Id + 0)
+lm2.b2 <- lm(df[250:504,]$WT2 ~ df[250:504,]$Id + 0)
+
+
+summary(wt3.bp)
+ts.wt3.b1 <- window(ts.wt3, start = 1, end = 258)
+ts.wt3.b2 <- window(ts.wt3, start = 259, end = 504)
+
+lm3.b1 <- lm(df[1:258,]$WT3 ~ df[1:258,]$Id + 0)
+lm3.b2 <- lm(df[259:504,]$WT3 ~ df[259:504,]$Id + 0)
+
+
+summary(wt4.bp)
+ts.wt4.b1 <- window(ts.wt4, start = 1, end = 111)
+ts.wt4.b2 <- window(ts.wt4, start = 112, end = 504)
+
+lm4.b1 <- lm(df[1:111,]$WT4 ~ df[1:111,]$Id + 0)
+lm4.b2 <- lm(df[112:504,]$WT4 ~ df[112:504,]$Id + 0)
+
+
+summary(wt5.bp)
+ts.wt5.b1 <- window(ts.wt5, start = 1, end = 248)
+ts.wt5.b2 <- window(ts.wt5, start = 249, end = 504)
+
+lm5.b1 <- lm(df[1:248,]$WT5 ~ df[1:248,]$Id + 0)
+lm5.b2 <- lm(df[249:504,]$WT5 ~ df[249:504,]$Id + 0)
+
+
+par(mfrow = c(2,3))
+
+barplot(cbind(m1$coefficients, lm1.b1$coefficients, lm1.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT1", col = c("orange","red","blue"))
+
+barplot(cbind(m2$coefficients, lm2.b1$coefficients, lm2.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT2", col = c("orange","red","blue"))
+
+barplot(cbind(m3$coefficients, lm3.b1$coefficients, lm3.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT3", col = c("orange","red","blue"))
+
+barplot(cbind(m4$coefficients, lm4.b1$coefficients, lm4.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT4", col = c("orange","red","blue"))
+
+barplot(cbind(m5$coefficients, lm5.b1$coefficients, lm5.b2$coefficients), beside = T,
+        names.arg = c("complete","< bp","> bp"), main = "WT5", col = c("orange","red","blue"))
+
