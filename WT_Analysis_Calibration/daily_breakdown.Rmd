@@ -62,8 +62,20 @@ lista <- lapply(1:k, function(x) subsetDimension(pp_reanalysis, dimension = "tim
 
 kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
 
-spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = F, as.table = T,colorkey = list(space ="bottom",height=1, width=1), color.theme = 'BrBG', names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
+spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = F, as.table = T,colorkey = list(width = 0.75), at = seq(0,18,1), color.theme = 'BrBG', names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
 ```
+```{r}
+b <- violinPlot("WT1" = subsetGrid(kmedias.pp, members = 1), "WT2" = subsetGrid(kmedias.pp, members = 2),"WT3" = subsetGrid(kmedias.pp, members = 3),"WT4" = subsetGrid(kmedias.pp, members = 4), "WT5" = subsetGrid(kmedias.pp, members = 5), color.theme = 'BrBG', color.cuts = seq(0,18,1))
+```
+
+```{r}
+medians <- c(median(subsetGrid(kmedias.pp, members = 1)$Data),median(subsetGrid(kmedias.pp, members = 2)$Data),median(subsetGrid(kmedias.pp, members = 3)$Data),median(subsetGrid(kmedias.pp, members = 4)$Data),median(subsetGrid(kmedias.pp, members = 5)$Data))
+```
+
+```{r}
+b + layer(panel.xyplot(1:5,medians, col = 'red', pch = 19, cex = 1.25))
+```
+
 
 ```{r}
 cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1979_2020.csv')

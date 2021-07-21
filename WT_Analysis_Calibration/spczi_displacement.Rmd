@@ -14,6 +14,8 @@ library(loadeR)
 library(transformeR)
 library(visualizeR)
 library(clue)
+library(scales)
+library(lubridate)
 ```
 # Period 1998-2020
 ```{r}
@@ -522,4 +524,82 @@ legend("topright",
        cex = 0.75)
 ```
 
+```{r}
+vals <- rbind(vals, c(sum(vals[,1]), sum(vals[,2]),sum(vals[,3]),sum(vals[,4]),sum(vals[,5])))
+```
+
+```{r}
+col.barplot <- c(alpha("#006837",.25),alpha("#006837",.5),alpha("#006837",.75),"#006837",
+                 alpha("#66C2A5",.25),alpha("#66C2A5",.5),alpha("#66C2A5",.75),"#66C2A5",
+                 alpha("#FFFFBF",.25),alpha("#FFFFBF",.5),alpha("#FFFFBF",.75),"#FFFFBF",
+                 alpha("#5E4FA2",.25),alpha("#5E4FA2",.5),alpha("#5E4FA2",.75),"#5E4FA2",
+                 alpha("#F46D43",.25),alpha("#F46D43",.5),alpha("#F46D43",.75),"#F46D43")
+```
+
+```{r}
+#rownames(vals) <- c("T3","T2","T1","T1+T2+T3")
+barplot(vals, beside = T, col = col.barplot, names.arg = c("WT1","WT2","WT3","WT4","WT5"), 
+        horiz = T, xlab = "Number of cyclone generation centers")
+```
+
+```{r}
+cyclones <- read.csv('C:/Users/usuario/Desktop/Master/tfm/Notebooks_TFM/SP_cyclones_time_series_1979_2020.csv')
+cyclones$Date <- as.Date(cyclones$Date)
+cyclones <- cyclones[,2:3]
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.projected2.RData")
+pca.projected.matrix <- cbind(pca.projected$tp[[1]],pca.projected$msl[[1]],pca.projected$diff_slp[[1]])
+
+```
+
+```{r}
+clustering <- cl_predict(kmModel5, pca.projected.matrix, type = "class_ids")
+```
+
+```{r}
+clustering[1] <- 1
+
+clustering <- c(kmModel5$cluster, clustering)
+``` 
+
+```{r}
+cyclones.cl1 <- cyclones[which(clustering == 1),]
+cyclones.cl2 <- cyclones[which(clustering == 2),]
+cyclones.cl3 <- cyclones[which(clustering == 3),]
+cyclones.cl4 <- cyclones[which(clustering == 4),]
+cyclones.cl5 <- cyclones[which(clustering == 5),]
+```
+
+```{r}
+cyc.year1 <- c()
+cyc.year2 <- c()
+cyc.year3 <- c()
+cyc.year4 <- c()
+cyc.year5 <- c()
+
+for (i in seq(1979,2020)) {
+  idx.cl1 <- which(year(cyclones.cl1$Date) == i)
+  idx.cl2 <- which(year(cyclones.cl2$Date) == i)
+  idx.cl3 <- which(year(cyclones.cl3$Date) == i)
+  idx.cl4 <- which(year(cyclones.cl4$Date) == i)
+  idx.cl5 <- which(year(cyclones.cl5$Date) == i)
+  
+  cyc.year1 <- c(cyc.year1,sum(cyclones.cl1$cyclones_generation_centers[idx.cl1]))
+  cyc.year2 <- c(cyc.year2,sum(cyclones.cl2$cyclones_generation_centers[idx.cl2]))
+  cyc.year3 <- c(cyc.year3,sum(cyclones.cl3$cyclones_generation_centers[idx.cl3]))
+  cyc.year4 <- c(cyc.year4,sum(cyclones.cl4$cyclones_generation_centers[idx.cl4]))
+  cyc.year5 <- c(cyc.year5,sum(cyclones.cl5$cyclones_generation_centers[idx.cl5]))
+}
+```
+
+
+
+```{r}
+barplot(rbind(cyc.year1, cyc.year2, cyc.year3, cyc.year4, cyc.year5),
+        col = c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), horiz = T,
+        names.arg = seq(1979,2020,1), cex.names = .5, las = 2,
+        ylab = "Annual cyclone generation centers")
+```
 

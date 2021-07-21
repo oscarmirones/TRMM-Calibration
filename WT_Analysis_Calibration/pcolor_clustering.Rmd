@@ -129,19 +129,37 @@ data$Z <- as.vector(t(matrix(c(cluster1,cluster2,cluster3,cluster4,cluster5), nr
 
 cyc.data <- expand.grid(X=x, Y=y)
 cyc.data$Z <- as.vector(t(matrix(c(cyc.cluster1,cyc.cluster2,cyc.cluster3,cyc.cluster4,cyc.cluster5), nrow = 12,ncol = 5)))
-levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
+levelplot(Z ~ Y*X, data=data,  xlab = "", ylab = "WT", scales=list(x=list(at=seq(1,12,1), labels = c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
           main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))
-grid.text("N Obs", .94, .13)
 ```
 ```{r}
 coordinates(cyc.data) <- ~Y+X
 ```
 
+```{r}
+scale.1.100 <- function(x){
+  return(((x-min(cyc.data$Z))/(max(cyc.data$Z)))*100)
+}
+```
 
 ```{r}
-levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
-          main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')))+
-  layer(sp.points(cyc.data, pch = 19, cex = cyc.data$Z/550, col = 'blue'))+
+values <- scale.1.100(cyc.data$Z)
+
+values[which(values < 1)] <- 1
+bub <- data.frame(rep(1,length(cyc.data$Z)),values)
+colnames(bub) <- c("x","y")
+```
+
+```{r}
+ggplot(bub, aes( x = x, y = y, size = y)) + geom_point(fill = 'blue', colour = 'blue')+theme_bw()+scale_size_area(max_size = 10, limits = c(1,100))+theme(legend.position = "top", legend.direction = "horizontal") + labs(size = "Dot size")
+```
+
+
+
+```{r}
+levelplot(Z ~ Y*X, data=data,  xlab = "", ylab = "WT", scales=list(x=list(at=seq(1,12,1), labels = c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
+          main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')), colorkey = list(width = 0.75))+
+  layer(sp.points(cyc.data, pch = 19, cex = scale.1.100(cyc.data$Z)/25, col = 'blue'))+
   layer(panel.segments(10.5,1.5,12.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,10.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,12.5,0.5, col = 'blue', lwd = 2))+
@@ -177,7 +195,6 @@ levelplot(Z ~ Y*X, data=data  ,xlab="Month", ylab = "WT",
 
  
   
-grid.text("N Obs", .94, .13)
 ```
 
 

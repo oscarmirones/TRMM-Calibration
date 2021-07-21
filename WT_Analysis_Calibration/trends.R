@@ -508,3 +508,124 @@ barplot(cbind(m4$coefficients, lm4.b1$coefficients, lm4.b2$coefficients), beside
 barplot(cbind(m5$coefficients, lm5.b1$coefficients, lm5.b2$coefficients), beside = T,
         names.arg = c("complete","< bp","> bp"), main = "WT5", col = c("orange","red","blue"))
 
+#####wt1+wt4
+#annual
+counts.wt1 <- c()
+for (i in unique(wt1$Year)) {
+  counts.wt1 <- c(counts.wt1,length(which(wt1$Year == i)))
+}
+counts.wt2 <- c()
+for (i in unique(wt2$Year)) {
+  counts.wt2 <- c(counts.wt2,length(which(wt2$Year == i)))
+}
+
+counts.wt4 <- c()
+for (i in unique(wt4$Year)) {
+  counts.wt4 <- c(counts.wt4,length(which(wt4$Year == i)))
+}
+
+counts.wts14 <- counts.wt1 + counts.wt4
+df <- data.frame(unique(wt4$Year),counts.wts14)
+colnames(df) <- c("Year","Counts")
+
+ggplot(data = df, aes(x = Year)) + 
+  geom_line(aes(x = Year, y = Counts, colour = "WT1 + WT4")) + 
+  ylab("Cyclone generation centers number")+
+  scale_color_manual(name = "WT",values = "blue")
+
+model <- lm(Counts ~ Year + 0, data = df) #coef 0.1 (1,2,4) y 0.06(1,4)
+summary(model)
+
+model.intercept <- lm(Counts ~ Year, data = df) 
+summary(model.intercept)
+
+
+ts.wt14 <- ts(df$Counts, start = 1979, end = 2020)
+
+wt14.break <- breakpoints(ts.wt14 ~ 1)
+summary(wt14.break)
+
+ts.wt14.b1 <- window(ts.wt14, start = unique(data$Year)[1], end = unique(data$Year)[13])
+ts.wt14.b2 <- window(ts.wt14, start = unique(data$Year)[14], end = unique(data$Year)[42])
+
+lm1.b1 <- lm(df[1:13,]$Counts ~ df[1:13,]$Year + 0)
+lm1.b2 <- lm(df[14:42,]$Counts ~ df[14:42,]$Year + 0)
+
+summary(lm1.b1)
+summary(lm1.b2)
+
+lm1.b1.int <- lm(df[1:13,]$Counts ~ df[1:13,]$Year)
+lm1.b2.int <- lm(df[14:42,]$Counts ~ df[14:42,]$Year)
+
+summary(lm1.b1.int)
+summary(lm1.b2.int)
+
+annual.results <- c(model$coefficients, model.intercept$coefficients[2],
+                    lm1.b1$coefficients, lm1.b2$coefficients,
+                    lm1.b1.int$coefficients[2], lm1.b2.int$coefficients[2])
+
+names(annual.results) <- c("model complete","model complete int", "bp1","bp2",
+                           "bp1 int", "bp2 int")
+#monthly
+
+counts.wt1 <- c()
+for (i in y) {
+  y.idx <- which(wt1$Year == i)
+  for (j in m) {
+    m.idx <- which(wt1$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt1 <- c(counts.wt1,length(idx))
+  }  
+}
+
+counts.wt4 <- c()
+for (i in y) {
+  y.idx <- which(wt4$Year == i)
+  for (j in m) {
+    m.idx <- which(wt4$Month == j)
+    idx <- intersect(y.idx, m.idx)
+    counts.wt4 <- c(counts.wt4,length(idx))
+  }  
+}
+
+dates <- c()
+for (i in seq(1979,2020)) {
+  dates <- c(dates, rep(i,12))
+}
+counts.wts14 <- counts.wt1 + counts.wt4
+df <- data.frame(seq(1,504,1),counts.wts14)
+colnames(df) <- c("Year","Counts")
+
+ggplot(data = df, aes(x = Year)) + 
+  geom_line(aes(x = Year, y = Counts, colour = "WT1 + WT4")) + 
+  ylab("Cyclone generation centers number")+
+  scale_color_manual(name = "WT",values = "blue")
+
+
+model <- lm(Counts ~ Year + 0, data = df) 
+summary(model)
+
+model.intercept <- lm(Counts ~ Year, data = df) 
+summary(model.intercept)
+
+ts.wt14 <- ts(df$Counts, start = 1, end = 504)
+
+wt14.break <- breakpoints(ts.wt14 ~ 1)
+summary(wt14.break)
+
+lm1.b1 <- lm(df[1:170,]$Counts ~ df[1:170,]$Year+0)
+lm1.b2 <- lm(df[171:504,]$Counts ~ df[171:504,]$Year+0)
+
+lm1.b1.int <- lm(df[1:170,]$Counts ~ df[1:170,]$Year)
+lm1.b2.int <- lm(df[171:504,]$Counts ~ df[171:504,]$Year)
+
+monthly.results <- c(model$coefficients, model.intercept$coefficients[2],
+                    lm1.b1$coefficients, lm1.b2$coefficients,
+                    lm1.b1.int$coefficients[2], lm1.b2.int$coefficients[2])
+
+names(monthly.results) <- c("model complete","model complete int", "bp1","bp2",
+                           "bp1 int", "bp2 int")
+
+annual.results
+
+monthly.results
