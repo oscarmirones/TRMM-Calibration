@@ -1,0 +1,20 @@
+This file contains relevant information about trends_data.csv
+
+Columns:
+
+	Date: Complete date of the corresponding record
+
+	Year: Year of the corresponding record
+
+	Month: Month of the corresponding record
+
+	Day: Day of the corresponding record
+
+	WT: Weather Type attributed to the corresponding record
+
+	Train_or_Test: Indicates if the corresponding record has been used in train or test phase.
+			Period 1979-1997 was used as test and 1998-2020 as train.
+	
+	SPI: Corresponding value of SPI to the record. Only computed for train period
+
+	Tertile: Indicates the SPI tertile to which each record corresponds. Only computed for train period 
