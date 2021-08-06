@@ -143,15 +143,15 @@ scale.1.100 <- function(x){
 ```
 
 ```{r}
-values <- scale.1.100(cyc.data$Z)
+#values <- scale.1.100(cyc.data$Z)
 
-values[which(values < 1)] <- 1
-bub <- data.frame(rep(1,length(cyc.data$Z)),values)
-colnames(bub) <- c("x","y")
+#values[which(values < 1)] <- 1
+#bub <- data.frame(rep(1,length(cyc.data$Z)),values)
+#colnames(bub) <- c("x","y")
 ```
 
 ```{r}
-ggplot(bub, aes( x = x, y = y, size = y)) + geom_point(fill = 'blue', colour = 'blue')+theme_bw()+scale_size_area(max_size = 10, limits = c(1,100))+theme(legend.position = "top", legend.direction = "horizontal") + labs(size = "Dot size")
+#ggplot(bub, aes( x = x, y = y, size = y)) + geom_point(fill = 'blue', colour = 'blue')+theme_bw()+scale_size_area(max_size = 10, limits = c(1,100))+theme(legend.position = "top", legend.direction = "horizontal") + labs(size = "Dot size")
 ```
 
 

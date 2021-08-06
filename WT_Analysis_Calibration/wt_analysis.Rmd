@@ -1204,28 +1204,8 @@ station.df
 ```
 
 
-#TESTS
 
-```{r}
-precip_trmm <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "precip_trmm")
- 
-precip_obs <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "precip_obs")
 
-slp <- loadStationData("C:/Users/usuario/Desktop/TRMM-Calibration/Data/SP_ascii", var = "slp")
-
-precip_trmm <- subsetYears(precip_trmm, years = c(1998:2016))
-precip_obs <- subsetYears(precip_obs, years = c(1998:2016))
-slp <- subsetYears(slp, years = c(1998:2016))
-
-multigrid <- makeMultiGrid(precip_trmm, precip_obs, slp)
-```
-
-```{r}
-trmm2016 <- subsetGrid(trmm2016,members = 1)
-psl2016 <- subsetGrid(psl2016, members = 1)
-
-clusterGrid(makeMultiGrid(trmm2016, psl2016)) #be careful!: blue screen!
-```
 
 
 
