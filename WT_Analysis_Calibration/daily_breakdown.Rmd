@@ -75,6 +75,54 @@ medians <- c(median(subsetGrid(kmedias.pp, members = 1)$Data),median(subsetGrid(
 ```{r}
 b + layer(panel.xyplot(1:5,medians, col = 'red', pch = 19, cex = 1.25))
 ```
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/slp.RData")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(slp, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
+
+kmedias.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.slp,backdrop.theme = 'countries', rev.color = F, as.table = T,colorkey = list(width = 0.75, space = "bottom"), at = seq(100500,102000,100), color.theme = 'RdBu', names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]), contour = T)
+```
+
+```{r}
+b <- violinPlot("WT1" = subsetGrid(kmedias.slp, members = 1), "WT2" = subsetGrid(kmedias.slp, members = 2),"WT3" = subsetGrid(kmedias.slp, members = 3),"WT4" = subsetGrid(kmedias.slp, members = 4), "WT5" = subsetGrid(kmedias.slp, members = 5), color.theme = 'RdBu', color.cuts = seq(100500,102000,100))
+```
+
+```{r}
+medians <- c(median(subsetGrid(kmedias.slp, members = 1)$Data),median(subsetGrid(kmedias.slp, members = 2)$Data),median(subsetGrid(kmedias.slp, members = 3)$Data),median(subsetGrid(kmedias.slp, members = 4)$Data),median(subsetGrid(kmedias.slp, members = 5)$Data))
+```
+
+```{r}
+b + layer(panel.xyplot(1:5,medians, col = 'green', pch = 19, cex = 1.1))
+```
+
+```{r}
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/diff_slp.RData")
+```
+
+```{r}
+lista <- lapply(1:k, function(x) subsetDimension(diff.slp, dimension = "time", indices = which(kmModel5$cluster == x)) %>% climatology())
+
+kmedias.diff.slp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
+
+spatialPlot(kmedias.diff.slp,backdrop.theme = 'countries', rev.color = F, as.table = T,colorkey = list(width = 0.75, space = "bottom"), at = seq(-200,200,25), color.theme = 'RdBu', names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]), contour = T)
+```
+
+```{r}
+b <- violinPlot("WT1" = subsetGrid(kmedias.diff.slp, members = 1), "WT2" = subsetGrid(kmedias.diff.slp, members = 2),"WT3" = subsetGrid(kmedias.diff.slp, members = 3),"WT4" = subsetGrid(kmedias.diff.slp, members = 4), "WT5" = subsetGrid(kmedias.diff.slp, members = 5), color.theme = 'RdBu', color.cuts = seq(-200,200,25))
+```
+
+```{r}
+medians <- c(median(subsetGrid(kmedias.diff.slp, members = 1)$Data),median(subsetGrid(kmedias.diff.slp, members = 2)$Data),median(subsetGrid(kmedias.diff.slp, members = 3)$Data),median(subsetGrid(kmedias.diff.slp, members = 4)$Data),median(subsetGrid(kmedias.diff.slp, members = 5)$Data))
+```
+
+```{r}
+b + layer(panel.xyplot(1:5,medians, col = 'green', pch = 19, cex = 1.1))
+```
+
 
 
 ```{r}
@@ -87,7 +135,7 @@ cyclones <- cyclones[cyclones$Date < as.Date('1998-01-01'),]
 
 
 ```{r}
-load("pca.projected2.RData")
+load("C:/Users/usuario/Desktop/TRMM-Calibration/Data/pca.projected2.RData")
 pca.projected.matrix <- cbind(pca.projected$tp[[1]],pca.projected$msl[[1]],pca.projected$diff_slp[[1]])
 
 ```
@@ -156,7 +204,7 @@ data$Z <- as.vector(matrix(clustering, nrow = 42,ncol = 365))
 data$Z <- as.character(data$Z)
 
 levelplot(Z ~ X*Y, data=data  ,xlab="Season", ylab = "Years",scales=list(x=list(at=c(32,60,91,121,152,182,213,244,274,305,335), labels = c("Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
-          main="", col.regions =  c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), at = 0:5)
+          main="", col.regions =  c("#006837","#66C2A5","gold","#5E4FA2","#F46D43"), at = 0:5)
 
 
 ```
@@ -177,7 +225,7 @@ coordinates(cyc.data) <- ~ X+Y
 
 ```{r}
 levelplot(Z ~ X*Y, data=data  ,xlab="", ylab = "", scales=list(x=list(at=c(32,60,91,121,152,182,213,244,274,305,335), labels = c("Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
-          main="", col.regions = c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), at = 0:5,
+          main="", col.regions = c("#006837","#66C2A5","gold","#5E4FA2","#F46D43"), at = 0:5,
           colorkey = list(space ="bottom",height=1, width=1)) +
   layer(sp.points(cyc.data, pch = 21, cex = cyc.data$Z/50, col = 'white'))
 

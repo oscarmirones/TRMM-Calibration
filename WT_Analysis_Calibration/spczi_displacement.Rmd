@@ -598,8 +598,9 @@ for (i in seq(1979,2020)) {
 
 ```{r}
 barplot(rbind(cyc.year1, cyc.year2, cyc.year3, cyc.year4, cyc.year5),
-        col = c("#006837","#66C2A5","#FFFFBF","#5E4FA2","#F46D43"), horiz = T,
+        col = c("#006837","#66C2A5","gold","#5E4FA2","#F46D43"), horiz = T,
         names.arg = seq(1979,2020,1), cex.names = .5, las = 2,
         ylab = "Annual cyclone generation centers")
 ```
+
 
