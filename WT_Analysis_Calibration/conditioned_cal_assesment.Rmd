@@ -2103,8 +2103,14 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias EQM")
 
 format(bias.df, digits = 3, scientific = 5)
 ```
+
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+df.st1 <- df
+bias.df.st1 <- bias.df
+```
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -3380,7 +3386,12 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias PQM")
 format(bias.df, digits = 3, scientific = 5)
 ```
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+df.st2 <- df
+bias.df.st2 <- bias.df
+```
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -4654,7 +4665,13 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias GPQM")
 format(bias.df, digits = 3, scientific = 5)
 ```
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+df.st3 <- df
+bias.df.st3 <- bias.df
+```
+
+
+```{r}
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -5928,7 +5945,7 @@ format(bias.df, digits = 3, scientific = 5)
 ```
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -5948,6 +5965,11 @@ points(sort(station.obs$Data), sort(cal.station.complete$Data), col = "blue", pc
 legend("topleft", legend = c("Combinated","TRMM","EQM"), pch = c(2,4,4), col = c("black", "red","blue"))
 
 grid() 
+```
+
+```{r}
+df.st4 <- df
+bias.df.st4 <- bias.df
 ```
 ## ocean buoy?
 
@@ -7202,7 +7224,7 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias EQM")
 format(bias.df, digits = 3, scientific = 5)
 ```
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -7223,7 +7245,10 @@ legend("topleft", legend = c("Combinated","TRMM","EQM"), pch = c(2,4,4), col = c
 
 grid() 
 ```
-
+```{r}
+df.st5 <- df
+bias.df.st5 <- bias.df
+```
 ## Aoloau, American Samoa
 
 ```{r}
@@ -8476,7 +8501,7 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias PQM")
 format(bias.df, digits = 3, scientific = 5)
 ```
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -8498,6 +8523,10 @@ legend("topleft", legend = c("Combinated","TRMM","PQM"), pch = c(2,4,4), col = c
 grid() 
 ```
 
+```{r}
+df.st6 <- df
+bias.df.st6 <- bias.df
+```
 ## Aoloau, American Samoa (low elevation)
 
 ```{r}
@@ -9750,7 +9779,7 @@ format(bias.df, digits = 3, scientific = 5)
 ```
 
 ```{r}
-qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5, ylim = c(0,550))
+qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
 
@@ -9770,4 +9799,29 @@ points(sort(station.obs$Data), sort(cal.station.complete$Data), col = "blue", pc
 legend("topleft", legend = c("Combinated","TRMM","PQM"), pch = c(2,4,4), col = c("black", "red","blue"))
 
 grid() 
+```
+
+```{r}
+df.st7 <- df
+bias.df.st7 <- bias.df
+```
+
+
+
+
+
+```{r}
+plot(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[4,1],bias.df.st2[4,1],bias.df.st3[4,1],bias.df.st4[4,1],bias.df.st5[4,1],bias.df.st6[4,1],bias.df.st7[4,1]), col = "black", pch = 2, ylab = "R10p Bias Value", xlab = "Station", ylim = c(0,20000))
+points(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[4,2],bias.df.st2[4,2],bias.df.st3[4,2],bias.df.st4[4,2],bias.df.st5[4,2],bias.df.st6[4,2],bias.df.st7[4,2]), col = "blue", pch = 4)
+```
+
+```{r}
+plot(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[6,1],bias.df.st2[6,1],bias.df.st3[6,1],bias.df.st4[6,1],bias.df.st5[6,1],bias.df.st6[6,1],bias.df.st7[6,1]), col = "black", pch = 2, ylab = "R20p Bias Value", xlab = "Station", ylim = c(0,20000))
+points(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[6,2],bias.df.st2[6,2],bias.df.st3[6,2],bias.df.st4[6,2],bias.df.st5[6,2],bias.df.st6[6,2],bias.df.st7[6,2]), col = "blue", pch = 4)
+```
+
+
+```{r}
+plot(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[8,1],bias.df.st2[8,1],bias.df.st3[8,1],bias.df.st4[8,1],bias.df.st5[8,1],bias.df.st6[8,1],bias.df.st7[8,1]), col = "black", pch = 2, ylab = "P98WetAmount Bias Value", xlab = "Station", ylim = c(0,2000))
+points(x = c(1,2,3,4,5,6,7),y = c(bias.df.st1[8,2],bias.df.st2[8,2],bias.df.st3[8,2],bias.df.st4[8,2],bias.df.st5[8,2],bias.df.st6[8,2],bias.df.st7[8,2]), col = "blue", pch = 4)
 ```
