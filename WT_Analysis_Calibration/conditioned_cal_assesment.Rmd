@@ -15,24 +15,14 @@ library(transformeR)
 library(downscaleR)
 library(visualizeR)
 library(convertR)
-library(ncdf4)
 library(climate4R.value)
 library(magrittr)
 library(evd)
 library(formattable) #neccessary to create tables with colors
 library(lubridate) #neccessary to calculate differences in years between dates
 library(lattice)
-library(ggplot2)
-library(raster)
-library(rasterVis)
-library(sp)
-library(ggplot2)
-
-if (dir.exists("C:/Users/usuario/Desktop/TRMM-Calibration/Data")) {
-  dir <- "C:/Users/usuario/Desktop/TRMM-Calibration/Data"
-}else{
-  dir <- "/vols/abedul/meteo/mironeso/trmm"
-}
+library(abind) #necessary to biasCorrectionMod works
+library(MASS) 
 
 ```
 
@@ -2110,6 +2100,25 @@ bias.df.st1 <- bias.df
 ```
 
 ```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias EQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
+
+
+```{r}
 qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
@@ -3391,6 +3400,23 @@ bias.df.st2 <- bias.df
 ```
 
 ```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias PQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
+```{r}
 qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
@@ -4669,6 +4695,23 @@ df.st3 <- df
 bias.df.st3 <- bias.df
 ```
 
+```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias GPQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
 
 ```{r}
 qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
@@ -5971,6 +6014,24 @@ grid()
 df.st4 <- df
 bias.df.st4 <- bias.df
 ```
+
+```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias EQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
 ## ocean buoy?
 
 
@@ -7223,6 +7284,26 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias EQM")
 
 format(bias.df, digits = 3, scientific = 5)
 ```
+
+
+```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias EQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
+
 ```{r}
 qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
@@ -8501,6 +8582,25 @@ colnames(bias.df) <- c("Bias Conditioned", "Bias PQM")
 format(bias.df, digits = 3, scientific = 5)
 ```
 ```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias PQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
+```
+
+
+```{r}
 qqplot(station.obs$Data, wt_conditioned$Data, main = paste(station.obs$Metadata$name), xlab = "Observed (mm)", ylab = "Predicted (mm)", col = "black", pch = 2, cex = .5)
 
 abline(a = 0, b = 1)
@@ -9776,6 +9876,24 @@ bias.df <- data.frame(diff.conditioned, diff.pqm)
 colnames(bias.df) <- c("Bias Conditioned", "Bias PQM")
 
 format(bias.df, digits = 3, scientific = 5)
+```
+
+```{r}
+bias.rel.cond <- (abs(df[,2]-df[,1])/df[,1])*100
+
+names(bias.rel.cond) <- names(diff.conditioned)
+
+bias.rel.no.cond <- (abs(df[,3]-df[,1])/df[,1])*100
+
+names(bias.rel.no.cond) <- names(diff.conditioned)
+```
+
+```{r}
+bias.rel.df <- data.frame(bias.rel.cond, bias.rel.no.cond)
+
+colnames(bias.rel.df) <- c("Relative Bias Conditioned", "Relative Bias PQM")
+
+format(bias.rel.df, digits = 3, scientific = 5)
 ```
 
 ```{r}

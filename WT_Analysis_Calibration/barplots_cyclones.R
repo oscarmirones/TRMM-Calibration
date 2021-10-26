@@ -64,15 +64,44 @@ for (i in unique(wt5$Year)) {
 barplot(counts.wt5/sum(counts.wt5), names.arg = as.character(unique(wt5$Year)), col = 'blue',
         ylab = "Cyclones gen centers percentage", main = "WT5")
 
+enso <- read.csv("C:/Users/usuario/Desktop/TRMM-Calibration/Data/enso_ts.csv")
+
+enso[19,]$events = "Nino"
+cols <- c()
+
+for (i in seq(1,dim(enso)[1])) {
+  color = ""
+  if (enso$events[i] == "Nino") {
+    color = "red"
+  }else if (enso$events[i] == "Nina" ){
+    color = "blue"
+  }else{
+    color = "grey"
+  }
+  cols <- c(cols, color)
+}
+
 par(mfrow=c(2,3))
-barplot(counts.wt1/sum(counts.wt1), names.arg = as.character(unique(wt1$Year)), col = 'blue',
+barplot(counts.wt1/sum(counts.wt1), names.arg = as.character(unique(wt1$Year)), col = cols,
         ylab = "Cyclones gen centers percentage", main = "WT1", ylim = c(0,0.25))
-barplot(counts.wt2/sum(counts.wt2), names.arg = as.character(unique(wt2$Year)), col = 'blue',
+barplot(counts.wt2/sum(counts.wt2), names.arg = as.character(unique(wt2$Year)), col = cols,
         ylab = "Cyclones gen centers percentage", main = "WT2", ylim = c(0,0.25))
-barplot(counts.wt3/sum(counts.wt3), names.arg = as.character(unique(wt3$Year)), col = 'blue',
+barplot(counts.wt3/sum(counts.wt3), names.arg = as.character(unique(wt3$Year)), col = cols,
         ylab = "Cyclones gen centers percentage", main = "WT3", ylim = c(0,0.25))
-barplot(counts.wt4/sum(counts.wt4), names.arg = as.character(unique(wt4$Year)), col = 'blue',
+barplot(counts.wt4/sum(counts.wt4), names.arg = as.character(unique(wt4$Year)), col = cols,
         ylab = "Cyclones gen centers percentage", main = "WT4", ylim = c(0,0.25))
-barplot(counts.wt5/sum(counts.wt5), names.arg = as.character(unique(wt5$Year)), col = 'blue',
+barplot(counts.wt5/sum(counts.wt5), names.arg = as.character(unique(wt5$Year)), col = cols,
         ylab = "Cyclones gen centers percentage", main = "WT5", ylim = c(0,0.25))
 
+
+par(mfrow=c(2,3))
+barplot(counts.wt1, names.arg = as.character(unique(wt1$Year)), col = cols,
+        ylab = "Cyclones gen centers", main = "WT1")
+barplot(counts.wt2, names.arg = as.character(unique(wt2$Year)), col = cols,
+        ylab = "Cyclones gen centers", main = "WT2")
+barplot(counts.wt3, names.arg = as.character(unique(wt3$Year)), col = cols,
+        ylab = "Cyclones gen centers", main = "WT3")
+barplot(counts.wt4, names.arg = as.character(unique(wt4$Year)), col = cols,
+        ylab = "Cyclones gen centers", main = "WT4")
+barplot(counts.wt5, names.arg = as.character(unique(wt5$Year)), col = cols,
+        ylab = "Cyclones gen centers", main = "WT5")
