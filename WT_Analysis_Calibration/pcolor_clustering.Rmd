@@ -75,6 +75,12 @@ kmedias.pp <- bindGrid(lista, dimension = "member", skip.temporal.check = TRUE)
 spatialPlot(kmedias.pp,backdrop.theme = 'countries', rev.color = T, as.table = T, names.attr = paste("Days in cluster", 1:k, ":",kmModel5$size[1:k]))
 ```
 ```{r}
+idx <- which(cyclones$cyclones_generation_centers > 0)
+cyclones$cyclones_generation_centers[idx] <- 1
+```
+
+
+```{r}
 cl1 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 1))
 cl2 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 2))
 cl3 <- subsetDimension(pp_reanalysis, dimension = "time", indices = which(kmModel5$cluster == 3))
@@ -159,7 +165,7 @@ scale.1.100 <- function(x){
 ```{r}
 levelplot(Z ~ Y*X, data=data,  xlab = "", ylab = "WT", scales=list(x=list(at=seq(1,12,1), labels = c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"))),
           main="", col.regions = rev(hcl.colors(100,palette = 'GnBu')), colorkey = list(width = 0.75))+
-  layer(sp.points(cyc.data, pch = 19, cex = scale.1.100(cyc.data$Z)/25, col = 'blue'))+
+  layer(sp.points(cyc.data, pch = 19, cex = scale.1.100(cyc.data$Z)/25, col = 'orange'))+
   layer(panel.segments(10.5,1.5,12.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,10.5,1.5, col = 'blue', lwd = 2))+
   layer(panel.segments(10.5,0.5,12.5,0.5, col = 'blue', lwd = 2))+
